@@ -21,5 +21,5 @@ app.use('/api/approvals', require('./routes/postApprovalRoutes'));
 app.use('/api/reminders', require('./routes/reminderRoutes'));
 app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
