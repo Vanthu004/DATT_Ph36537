@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import { userApi } from '../utils';
+import { userApi } from '../../utils';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,12 +16,10 @@ export default function LoginScreen({ navigation }) {
     try {
       const response = await userApi.login(email, password);
       if (response.success) {
-        // Lưu token
         userApi.setToken(response.data.token);
-        // Lưu thông tin user (có thể lưu vào AsyncStorage)
-        console.log('Login successful:', response.data);
+        if (onLogin) onLogin(response.data.token);
         setLoading(false);
-        navigation.replace('Home');
+        // KHÔNG navigation.replace('Home') nữa
       } else {
         setLoading(false);
         Alert.alert('Lỗi', response.error || 'Đăng nhập thất bại');
@@ -34,7 +32,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/Logo.png')} style={styles.logo} />
+      <Image source={require('../../../assets/Logo.png')} style={styles.logo} />
       <Text style={styles.title}>Đăng nhập</Text>
       <TextInput
         style={styles.input}
@@ -61,11 +59,11 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.registerLink} onPress={() => navigation.navigate('Register')}>Tạo ngay!</Text>
       </Text>
       <TouchableOpacity style={styles.socialButton}>
-        <Image source={require('../../assets/google.png')} style={styles.socialIcon} />
+        <Image source={require('../../../assets/google.png')} style={styles.socialIcon} />
         <Text style={styles.socialText}>Tiếp tục với Google</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.socialButton}>
-        <Image source={require('../../assets/facebook.png')} style={styles.socialIcon} />
+        <Image source={require('../../../assets/facebook.png')} style={styles.socialIcon} />
         <Text style={styles.socialText}>Tiếp tục với Facebook</Text>
       </TouchableOpacity>
     </View>

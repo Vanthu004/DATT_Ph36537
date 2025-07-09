@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { userApi } from '../../utils';
+import { useNavigation } from '@react-navigation/native';
 
 const user = {
   name: 'Văn Thư',
@@ -15,7 +17,31 @@ const menuItems = [
   { id: '4', label: 'Giới thiệu về chúng tôi' },
 ];
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ onLogout }) {
+  const navigation = useNavigation();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Xác nhận đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất không?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng xuất', style: 'destructive', onPress: async () => {
+            await userApi.logout();
+            if (onLogout) onLogout();
+          }
+        },
+      ]
+    );
+  };
+
+  const handleMenuPress = (item) => {
+    if (item.label === 'Quản lý tài khoản phụ') {
+      navigation.navigate('SubAccount');
+    }
+    // Có thể xử lý các menu khác ở đây
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -33,14 +59,14 @@ export default function ProfileScreen() {
       {/* Menu */}
       <View style={styles.menuBox}>
         {menuItems.map(item => (
-          <TouchableOpacity key={item.id} style={styles.menuItem}>
+          <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <Ionicons name="chevron-forward" size={18} color="#888" />
           </TouchableOpacity>
         ))}
       </View>
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutBtn}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
 

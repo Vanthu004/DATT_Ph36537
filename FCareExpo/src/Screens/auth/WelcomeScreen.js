@@ -12,7 +12,7 @@ export default function WelcomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.logoBox}>
-        <Image source={require('../../assets/Logo.png')} style={styles.logo} />
+      <Image source={require('../../../assets/Logo.png')} style={styles.logo} />
       </View>
     </View>
   );

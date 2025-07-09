@@ -1,15 +1,33 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import HomeScreen from '../Screens/main/HomeScreen';
 import ActivityLogScreen from '../Screens/main/ActivityLogScreen';
 import PostListScreen from '../Screens/main/PostListScreen';
 import ProfileScreen from '../Screens/main/ProfileScreen';
 import ReminderListScreen from '../Screens/main/ReminderListScreen';
+import SubAccountScreen from '../Screens/main/SubAccountScreen';
+import SubAccountDetailScreen from '../Screens/main/SubAccountDetailScreen';
+import SubAccountCreateScreen from '../Screens/main/SubAccountCreateScreen';
 
 const Tab = createBottomTabNavigator();
+const ProfileStack = createStackNavigator();
 
-export default function MainNavigator() {
+function ProfileStackScreen({ onLogout }) {
+  return (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="ProfileMain">
+        {props => <ProfileScreen {...props} onLogout={onLogout} />}
+      </ProfileStack.Screen>
+      <ProfileStack.Screen name="SubAccount" component={SubAccountScreen} />
+      <ProfileStack.Screen name="SubAccountDetail" component={SubAccountDetailScreen} />
+      <ProfileStack.Screen name="SubAccountCreate" component={SubAccountCreateScreen} />
+    </ProfileStack.Navigator>
+  );
+}
+
+export default function MainNavigator({ onLogout }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -33,7 +51,9 @@ export default function MainNavigator() {
       <Tab.Screen name="Nhật ký" component={ActivityLogScreen} />
       <Tab.Screen name="Bài viết" component={PostListScreen} />
       <Tab.Screen name="Nhắc lịch" component={ReminderListScreen} />
-      <Tab.Screen name="Cá nhân" component={ProfileScreen} />
+      <Tab.Screen name="Cá nhân">
+        {props => <ProfileStackScreen {...props} onLogout={onLogout} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 } 

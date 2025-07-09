@@ -1,5 +1,6 @@
 import apiService from './apiService';
 import { API_ENDPOINTS } from './apiConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // User API functions
 export const userApi = {
@@ -55,14 +56,20 @@ export const userApi = {
   },
 
   // Logout user (clear token)
-  logout: () => {
+  logout: async () => {
     apiService.setAuthToken(null);
-    // You might want to clear AsyncStorage here as well
+    await AsyncStorage.removeItem('token');
   },
 
   // Set authentication token
   setToken: (token) => {
     apiService.setAuthToken(token);
+  },
+
+  // Get all users
+  getAllUsers: async () => {
+    const response = await apiService.get('/users');
+    return response;
   },
 };
 

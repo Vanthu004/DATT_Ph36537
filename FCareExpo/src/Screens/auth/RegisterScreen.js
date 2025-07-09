@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { userApi } from '../utils';
+import { userApi } from '../../utils';
 
 export default function RegisterScreen({ navigation }) {
   const [fullName, setFullName] = useState('');

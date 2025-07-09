@@ -7,9 +7,9 @@ const crypto = require('crypto');
 // CREATE  (POST /api/users)
 exports.createUser = async (req, res) => {
   try {
-    const { email, password, role, name, parent_id } = req.body;
+    const { email, password, role, name, parent_id, avatar, avata_url, phone_number } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, password: hashedPassword, role, name, parent_id });
+    const user = await User.create({ email, password: hashedPassword, role, name, parent_id, avatar, avata_url, phone_number });
     res.status(201).json(user);
   } catch (err) {
     res.status(400).json({ message: err.message });
