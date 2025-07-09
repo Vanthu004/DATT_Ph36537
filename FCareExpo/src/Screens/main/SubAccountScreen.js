@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    top: 8,
+    top: 50,
     left: 0,
     zIndex: 10,
     padding: 8,

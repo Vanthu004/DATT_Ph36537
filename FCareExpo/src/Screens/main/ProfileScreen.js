@@ -38,6 +38,8 @@ export default function ProfileScreen({ onLogout }) {
   const handleMenuPress = (item) => {
     if (item.label === 'Quản lý tài khoản phụ') {
       navigation.navigate('SubAccount');
+    } else if (item.label === 'Quản lý trẻ em') {
+      navigation.navigate('ChildManagement');
     }
     // Có thể xử lý các menu khác ở đây
   };

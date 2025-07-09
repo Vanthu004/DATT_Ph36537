@@ -10,6 +10,9 @@ import ReminderListScreen from '../Screens/main/ReminderListScreen';
 import SubAccountScreen from '../Screens/main/SubAccountScreen';
 import SubAccountDetailScreen from '../Screens/main/SubAccountDetailScreen';
 import SubAccountCreateScreen from '../Screens/main/SubAccountCreateScreen';
+import ChildManagementScreen from '../Screens/main/ChildManagementScreen';
+import ChildDetailScreen from '../Screens/main/ChildDetailScreen';
+import ChildCreateScreen from '../Screens/main/ChildCreateScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createStackNavigator();
@@ -23,6 +26,9 @@ function ProfileStackScreen({ onLogout }) {
       <ProfileStack.Screen name="SubAccount" component={SubAccountScreen} />
       <ProfileStack.Screen name="SubAccountDetail" component={SubAccountDetailScreen} />
       <ProfileStack.Screen name="SubAccountCreate" component={SubAccountCreateScreen} />
+      <ProfileStack.Screen name="ChildManagement" component={ChildManagementScreen} />
+      <ProfileStack.Screen name="ChildDetail" component={ChildDetailScreen} />
+      <ProfileStack.Screen name="ChildCreate" component={ChildCreateScreen} />
     </ProfileStack.Navigator>
   );
 }

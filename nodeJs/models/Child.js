@@ -7,6 +7,10 @@ const childSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    avata_url: {
+      type: String,
+      default: ''
+    },
     full_name: {
       type: String,
       required: true,
