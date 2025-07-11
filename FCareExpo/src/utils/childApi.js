@@ -72,6 +72,12 @@ export const childApi = {
     const response = await apiService.get(endpoint);
     return response;
   },
+
+  // Get all assigned children for parent_main
+  getAllAssignedChildrenForParent: async () => {
+    const response = await apiService.get(API_ENDPOINTS.GET_ALL_ASSIGNED_FOR_PARENT);
+    return response;
+  },
 };
 
 export default childApi; 

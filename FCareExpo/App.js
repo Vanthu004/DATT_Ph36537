@@ -6,6 +6,8 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Provider } from 'react-redux';
 import store from './src/store';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
@@ -16,6 +18,16 @@ export default function App() {
       setIsLoggedIn(!!token);
     };
     checkToken();
+  }, []);
+
+  useEffect(() => {
+    const getNotificationPermission = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Bạn cần cấp quyền thông báo để nhận nhắc nhở');
+      }
+    };
+    getNotificationPermission();
   }, []);
 
   // Để các màn hình khác có thể cập nhật trạng thái đăng nhập
@@ -35,6 +47,14 @@ export default function App() {
     await AsyncStorage.removeItem('userId');
     setIsLoggedIn(false);
   };
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
 
   if (isLoggedIn === null) return null; // hoặc loading indicator
 

@@ -104,3 +104,49 @@ exports.getAllChildrenWithAssignment = async (req, res) => {
     res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
   }
 };
+
+// 📋 Lấy tất cả trẻ đã gán cho parent_main
+exports.getAllAssignedChildrenForParent = async (req, res) => {
+  try {
+    console.log('User info:', { id: req.user.id, role: req.user.role });
+    
+    // Chỉ parent_main mới có thể xem tất cả trẻ đã gán
+    if (req.user.role !== 'parent_main') {
+      return res.status(403).json({ success: false, message: "Chỉ tài khoản chính mới có thể xem tất cả trẻ đã gán." });
+    }
+
+    // Lấy tất cả trẻ của parent_main đang đăng nhập
+    const allChildren = await Child.find({ parent_id: req.user.id });
+    console.log('Found children for parent_main:', allChildren.length);
+    
+    // Lấy tất cả assignment để biết trẻ nào đã được gán
+    const allAssignments = await AssignedChild.find().populate("child_id");
+    
+    // Tạo map để track trẻ nào đã được gán
+    const assignedChildMap = new Map();
+    allAssignments.forEach(assignment => {
+      if (assignment.child_id) {
+        const childId = assignment.child_id._id.toString();
+        if (!assignedChildMap.has(childId)) {
+          assignedChildMap.set(childId, []);
+        }
+        assignedChildMap.get(childId).push(assignment.user_id);
+      }
+    });
+    
+    // Thêm thông tin gán vào mỗi trẻ
+    const childrenWithAssignment = allChildren.map(child => ({
+      ...child.toObject(),
+      isAssigned: assignedChildMap.has(child._id.toString()),
+      assignedTo: assignedChildMap.get(child._id.toString()) || []
+    }));
+
+    res.json({ 
+      success: true, 
+      data: childrenWithAssignment 
+    });
+  } catch (err) {
+    console.error('Error in getAllAssignedChildrenForParent:', err);
+    res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
+  }
+};

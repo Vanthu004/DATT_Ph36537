@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
   GET_CHILDREN_BY_USER: '/assigned-child/by-user/:user_id',
   GET_USERS_BY_CHILD: '/assigned-child/by-child/:child_id',
   GET_CHILDREN_WITH_ASSIGNMENT: '/assigned-child/children-with-assignment/:user_id',
+  GET_ALL_ASSIGNED_FOR_PARENT: '/assigned-child/all-assigned-for-parent',
   
   // Payment endpoints
   GET_PAYMENTS: '/payments',

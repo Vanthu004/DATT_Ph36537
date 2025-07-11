@@ -18,4 +18,7 @@ router.get("/by-child/:child_id", authMiddleware, assignedChildController.getUse
 // Lấy tất cả trẻ với thông tin gán cho tài khoản phụ cụ thể
 router.get("/children-with-assignment/:user_id", authMiddleware, assignedChildController.getAllChildrenWithAssignment);
 
+// Lấy tất cả trẻ đã gán cho parent_main
+router.get("/all-assigned-for-parent", authMiddleware, assignedChildController.getAllAssignedChildrenForParent);
+
 module.exports = router;

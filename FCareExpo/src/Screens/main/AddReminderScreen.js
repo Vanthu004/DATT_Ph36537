@@ -6,28 +6,58 @@ import { Ionicons } from '@expo/vector-icons';
 import childApi from '../../utils/childApi';
 import reminderApi from '../../utils/reminderApi';
 import { useSelector } from 'react-redux';
+import * as Notifications from 'expo-notifications';
 
 export default function AddReminderScreen({ navigation }) {
-  const userId = useSelector(state => state.user.user?._id);
+  // Lấy userId chắc chắn từ Redux
+  const userId = useSelector(state => state.user.user?._id || state.user.user?.id);
+  const reduxSelectedChild = useSelector(state => state.reminder.selectedChild);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [time, setTime] = useState(new Date());
   const [date, setDate] = useState(new Date());
-  const [repeat, setRepeat] = useState('Hằng ngày');
+  const [repeat, setRepeat] = useState('daily'); // Giá trị mặc định là 'daily'
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
-    childApi.getChildrenByUser(userId)
-      .then(res => {
-        setChildren(res.data || []);
-        if (res.data && res.data.length > 0) setSelectedChild(res.data[0]._id);
-      })
-      .catch(err => console.log(err));
-  }, [userId]);
+    if (reduxSelectedChild) {
+      setSelectedChild(reduxSelectedChild);
+    } else if (userId) {
+      childApi.getChildrenByUser(userId)
+        .then(res => {
+          setChildren(res.data || []);
+          if (res.data && res.data.length > 0) setSelectedChild(res.data[0]);
+        })
+        .catch(err => console.log(err));
+    }
+  }, [userId, reduxSelectedChild]);
+
+  const mapRepeatValue = (value) => {
+    switch (value) {
+      case 'daily': return 'daily';
+      case 'weekly': return 'weekly';
+      case 'monthly': return 'monthly';
+      default: return 'none';
+    }
+  };
+
+  const scheduleReminderNotification = async (reminder) => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `Nhắc nhở: ${reminder.title}`,
+          body: reminder.description || 'Bạn có một hoạt động cần làm',
+          sound: true,
+        },
+        trigger: new Date(reminder.time),
+      });
+    } catch (err) {
+      console.log('Lỗi đặt lịch thông báo:', err);
+    }
+  };
 
   const handleSave = async () => {
     if (!title || !selectedChild) {
@@ -35,17 +65,30 @@ export default function AddReminderScreen({ navigation }) {
       return;
     }
     try {
+      // Gộp ngày và giờ thành 1 đối tượng Date
+      const reminderTime = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes()
+      );
       const reminderData = {
         title,
         description,
-        time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: date.toISOString().split('T')[0],
-        repeat,
-        childId: selectedChild,
-        userId,
+        time: reminderTime.toISOString(),
+        repeat_type: mapRepeatValue(repeat), // Sử dụng đúng trường và giá trị
+        child_id: selectedChild._id,
+        created_by: userId,
       };
+      // Thêm log kiểm tra
+      console.log('userId:', userId);
+      console.log('selectedChild:', selectedChild);
+      console.log('reminderData:', reminderData);
       const res = await reminderApi.createReminder(reminderData);
       if (res && res.success !== false) {
+        // Đặt lịch thông báo local
+        await scheduleReminderNotification(res.data || reminderData);
         navigation.goBack();
       } else {
         alert('Tạo lời nhắc thất bại!');
@@ -119,22 +162,16 @@ export default function AddReminderScreen({ navigation }) {
           onValueChange={setRepeat}
           style={{ height: 60 }}
         >
-          <Picker.Item label="Hằng ngày" value="Hằng ngày" />
-          <Picker.Item label="Hàng tuần" value="Hàng tuần" />
-          <Picker.Item label="Hàng tháng" value="Hàng tháng" />
+          <Picker.Item label="Hằng ngày" value="daily" />
+          <Picker.Item label="Hàng tuần" value="weekly" />
+          <Picker.Item label="Hàng tháng" value="monthly" />
+          <Picker.Item label="Không lặp lại" value="none" />
         </Picker>
       </View>
       <Text style={styles.label}>Trẻ em liên quan</Text>
-      <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={selectedChild}
-          onValueChange={setSelectedChild}
-          style={{ height: 60 }}
-        >
-          {children.map(child => (
-            <Picker.Item label={child.name} value={child._id} key={child._id} />
-          ))}
-        </Picker>
+      <Text style={styles.label}>Tên trẻ</Text>
+      <View style={styles.input}>
+        <Text>{selectedChild ? (selectedChild.name || selectedChild.full_name) : 'Chưa chọn trẻ'}</Text>
       </View>
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>Lưu nhắc nhở</Text>

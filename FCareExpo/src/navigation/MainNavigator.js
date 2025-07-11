@@ -14,6 +14,7 @@ import ChildManagementScreen from '../Screens/main/ChildManagementScreen';
 import ChildDetailScreen from '../Screens/main/ChildDetailScreen';
 import ChildCreateScreen from '../Screens/main/ChildCreateScreen';
 import AddReminderScreen from '../Screens/main/AddReminderScreen';
+import ReminderDetailScreen from '../Screens/main/ReminderDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createStackNavigator();
@@ -40,6 +41,7 @@ function ReminderStackScreen() {
     <ReminderStack.Navigator screenOptions={{ headerShown: false }}>
       <ReminderStack.Screen name="ReminderList" component={ReminderListScreen} />
       <ReminderStack.Screen name="AddReminder" component={AddReminderScreen} />
+      <ReminderStack.Screen name="ReminderDetail" component={ReminderDetailScreen} />
     </ReminderStack.Navigator>
   );
 }
