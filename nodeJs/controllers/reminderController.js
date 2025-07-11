@@ -25,6 +25,16 @@ exports.getReminderById = async (req, res) => {
   res.json(reminder);
 };
 
+// Lấy reminder theo child_id
+exports.getRemindersByChild = async (req, res) => {
+  try {
+    const reminders = await Reminder.find({ child_id: req.params.child_id });
+    res.json(reminders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Cập nhật reminder
 exports.updateReminder = async (req, res) => {
   const updated = await Reminder.findByIdAndUpdate(req.params.id, req.body, {

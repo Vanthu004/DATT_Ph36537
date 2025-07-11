@@ -1,58 +1,70 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from 'react-native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import { useSelector } from 'react-redux';
+import childApi from '../../utils/childApi';
+import reminderApi from '../../utils/reminderApi';
 
-const mockReminders = [
-  {
-    id: '1',
-    title: 'Thuốc buổi sáng',
-    description: 'Cho con uống 2 viên thuốc palaisatamom',
-    time: '08:00 sáng',
-    date: 'Hôm nay',
-  },
-  {
-    id: '2',
-    title: 'Thuốc buổi sáng',
-    description: 'Cho con uống 2 viên thuốc palaisatamom',
-    time: '08:00 sáng',
-    date: 'Hôm nay',
-  },
-  {
-    id: '3',
-    title: 'Thuốc buổi sáng',
-    description: 'Cho con uống 2 viên thuốc palaisatamom',
-    time: '08:00 sáng',
-    date: 'Hôm nay',
-  },
-  {
-    id: '4',
-    title: 'Thuốc buổi sáng',
-    description: 'Cho con uống 2 viên thuốc palaisatamom',
-    time: '08:00 sáng',
-    date: 'Hôm nay',
-  },
-];
+export default function ReminderListScreen({ navigation }) {
+  const userId = useSelector(state => state.user.user?._id);
+  const [children, setChildren] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-const mockChildren = ['trẻ A', 'trẻ B', 'trẻ C'];
+  // Lấy danh sách trẻ đã gán cho user
+  useEffect(() => {
+    if (!userId) return;
+    console.log('👤 userId đang đăng nhập:', userId); // kiểm tra đúng user chưa
+    childApi.getChildrenByUser(userId)
+      .then(res => {
+        console.log('🎯 Dữ liệu trả về:', res.data);
+        const childList = res.data.data || [];
+        setChildren(childList);
+        if (childList.length > 0) {
+          setSelectedChild(childList[0]._id);
+        }
+      })
+      .catch(err => console.log('❌ Lỗi khi gọi API:', err));
+  }, [userId]);
+  
 
-export default function ReminderListScreen() {
-  const [selectedChild, setSelectedChild] = useState(mockChildren[0]);
+  // Lấy danh sách nhắc nhở của trẻ được chọn
+  useEffect(() => {
+    if (!selectedChild) return;
+    setLoading(true);
+    reminderApi.getRemindersByChild(selectedChild)
+      .then(res => {
+        setReminders(res.data || []);
+      })
+      .catch(err => console.log(err))
+      .finally(() => setLoading(false));
+  }, [selectedChild]);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.reminderItem}>
-      <View style={{ flex: 1 }}>
+  // Hiển thị alert danh sách trẻ khi nhấn vào dropdown
+  const handleShowChildren = () => {
+    if (!children.length) {
+      Alert.alert('Danh sách trẻ', 'Không có trẻ nào được gán!');
+      return;
+    }
+    const names = children.map(child => child.full_name).join('\n');
+    Alert.alert('Danh sách trẻ đã gán', names);
+  };
+
+  // Render từng item nhắc nhở
+  const renderReminder = ({ item }) => (
+    <View style={styles.reminderCard}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={styles.reminderTitle}>{item.title}</Text>
-        <Text style={styles.reminderDesc}>{item.description}</Text>
-        <View style={styles.reminderMetaRow}>
-          <MaterialCommunityIcons name="calendar-blank-outline" size={14} color="#888" style={{ marginRight: 4 }} />
-          <Text style={styles.reminderMeta}>{item.date}</Text>
-        </View>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
         <Text style={styles.reminderTime}>{item.time}</Text>
-        <Ionicons name="chevron-forward" size={20} color="#888" style={{ marginTop: 16 }} />
       </View>
-    </TouchableOpacity>
+      <Text style={styles.reminderDesc}>{item.description}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+        <Ionicons name="calendar-outline" size={14} color="#888" style={{ marginRight: 4 }} />
+        <Text style={styles.reminderDate}>{item.date === new Date().toISOString().split('T')[0] ? 'Hôm nay' : item.date}</Text>
+      </View>
+    </View>
   );
 
   return (
@@ -60,29 +72,39 @@ export default function ReminderListScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Lịch nhắc nhở</Text>
-        <Ionicons name="add-circle-outline" size={26} color="#222" />
       </View>
-      {/* Filter chọn trẻ */}
-      <View style={styles.childFilterRow}>
-        <Text style={styles.childFilterLabel}>Lịch của trẻ</Text>
-        <TouchableOpacity style={styles.childFilterBtn}>
-          <Text style={styles.childFilterText}>{selectedChild}</Text>
-          <Ionicons name="chevron-down" size={16} color="#222" />
+      {/* Dropdown chọn trẻ */}
+      <View style={styles.childPickerRow}>
+        <Text style={styles.childPickerLabel}>Lịch của trẻ</Text>
+        <TouchableOpacity onPress={handleShowChildren} style={{ flex: 1 }}>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedChild}
+              onValueChange={setSelectedChild}
+              style={{ height: 36 }}
+            >
+              {children.map(child => (
+                <Picker.Item label={child.full_name} value={child._id} key={child._id} />
+              ))}
+            </Picker>
+          </View>
         </TouchableOpacity>
       </View>
-      {/* Reminder List */}
-      <View style={styles.reminderListBox}>
-        <FlatList
-          data={mockReminders}
-          keyExtractor={item => item.id}
-          renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
-      {/* Button */}
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>Ghi lại nhật ký hoạt động mới</Text>
+      {/* Danh sách nhắc nhở */}
+      <FlatList
+        data={reminders}
+        keyExtractor={item => item._id}
+        renderItem={renderReminder}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 100 }}
+        ListEmptyComponent={!loading && (
+          <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>Chưa có nhắc nhở nào</Text>
+        )}
+        refreshing={loading}
+        onRefresh={() => selectedChild && reminderApi.getRemindersByChild(selectedChild).then(res => setReminders(res.data || []))}
+      />
+      {/* Button tạo mới */}
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddReminder')}>
+        <Text style={styles.addButtonText}>Ghi lời nhắc nhở mới</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -95,12 +117,8 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderColor: '#eee',
     backgroundColor: '#fff',
@@ -110,86 +128,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#222',
   },
-  childFilterRow: {
+  childPickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
   },
-  childFilterLabel: {
-    fontSize: 15,
+  childPickerLabel: {
+    fontSize: 14,
     color: '#222',
     fontWeight: '500',
-    marginRight: 12,
+    marginRight: 8,
   },
-  childFilterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  pickerWrapper: {
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    flex: 1,
   },
-  childFilterText: {
-    fontSize: 13,
-    color: '#222',
-    marginRight: 2,
-  },
-  reminderListBox: {
+  reminderCard: {
     backgroundColor: '#F5F5F5',
     borderRadius: 16,
-    marginHorizontal: 12,
-    padding: 8,
     marginBottom: 16,
-  },
-  reminderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
+    padding: 14,
   },
   reminderTitle: {
-    color: '#222',
     fontSize: 15,
     fontWeight: 'bold',
+    color: '#222',
     marginBottom: 2,
-  },
-  reminderDesc: {
-    color: '#444',
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  reminderMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  reminderMeta: {
-    color: '#888',
-    fontSize: 12,
   },
   reminderTime: {
-    color: '#3B5BFE',
     fontSize: 13,
+    color: '#3B5BFE',
     fontWeight: 'bold',
-    marginBottom: 2,
   },
-  separator: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 2,
-    marginLeft: 0,
+  reminderDesc: {
+    fontSize: 13,
+    color: '#444',
+    marginBottom: 4,
+  },
+  reminderDate: {
+    fontSize: 12,
+    color: '#888',
   },
   addButton: {
     backgroundColor: '#3B5BFE',
     borderRadius: 24,
     marginHorizontal: 32,
     marginTop: 8,
-    marginBottom: 70,
+    marginBottom: 40,
     alignItems: 'center',
     justifyContent: 'center',
     height: 44,
@@ -199,37 +187,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    paddingHorizontal: 8,
-  },
-  navItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  navItemActive: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  navText: {
-    fontSize: 11,
-    color: '#222',
-    marginTop: 2,
-  },
-  navTextActive: {
-    fontSize: 11,
-    color: '#3B5BFE',
-    marginTop: 2,
-    fontWeight: 'bold',
-  },
-}); 
+});

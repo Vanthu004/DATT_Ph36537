@@ -10,11 +10,14 @@ export default function SubAccountScreen({ navigation }) {
 
   const fetchSubAccounts = async () => {
     setLoading(true);
-    const res = await userApi.getAllUsers();
-    if (res.success && res.data) {
-      // Lọc ra các tài khoản phụ (role === 'parent_sub')
-      setSubAccounts(res.data.filter(u => u.role === 'parent_sub'));
+    console.log('SubAccountScreen - fetching sub accounts with role=parent_sub');
+    const res = await userApi.getAllUsers({ role: 'parent_sub' });
+    console.log('SubAccountScreen - getAllUsers response:', res);
+    if (res.success && Array.isArray(res.data)) {
+      console.log('SubAccountScreen - Found sub accounts:', res.data.length);
+      setSubAccounts(res.data);
     } else {
+      console.log('SubAccountScreen - No sub accounts found or error:', res);
       setSubAccounts([]);
     }
     setLoading(false);

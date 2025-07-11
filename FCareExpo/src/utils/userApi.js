@@ -19,6 +19,12 @@ export const userApi = {
     return response;
   },
 
+  // Create sub account
+  createSubAccount: async (userData) => {
+    const response = await apiService.post(API_ENDPOINTS.CREATE_SUB_ACCOUNT, userData);
+    return response;
+  },
+
   // Get user by ID
   getUserById: async (userId) => {
     const endpoint = API_ENDPOINTS.GET_USER_BY_ID.replace(':id', userId);
@@ -67,8 +73,14 @@ export const userApi = {
   },
 
   // Get all users
-  getAllUsers: async () => {
-    const response = await apiService.get('/users');
+  getAllUsers: async (params = {}) => {
+    const response = await apiService.get('/users', params);
+    return response;
+  },
+
+  // Get current user info
+  getCurrentUser: async () => {
+    const response = await apiService.get(API_ENDPOINTS.GET_CURRENT_USER);
     return response;
   },
 };

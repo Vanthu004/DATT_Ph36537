@@ -1,14 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { userApi } from '../../utils';
-import { useNavigation } from '@react-navigation/native';
-
-const user = {
-  name: 'Văn Thư',
-  email: 'lythu2k4lc@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-};
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const menuItems = [
   { id: '1', label: 'Quản lý tài khoản phụ' },
@@ -19,6 +13,37 @@ const menuItems = [
 
 export default function ProfileScreen({ onLogout }) {
   const navigation = useNavigation();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserInfo();
+    }, [])
+  );
+
+  const fetchUserInfo = async () => {
+    try {
+      setLoading(true);
+      const response = await userApi.getCurrentUser();
+      console.log('ProfileScreen - getCurrentUser response:', response);
+      if (response.success && response.data) {
+        setUser(response.data);
+      } else {
+        console.log('ProfileScreen - Failed to get user info:', response);
+        Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.log('ProfileScreen - Error fetching user info:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -44,17 +69,83 @@ export default function ProfileScreen({ onLogout }) {
     // Có thể xử lý các menu khác ở đây
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Ionicons name="settings-outline" size={22} color="#222" />
+          <Text style={styles.headerTitle}>Hồ sơ</Text>
+          <TouchableOpacity onPress={fetchUserInfo} disabled={loading}>
+            <Ionicons name="refresh-outline" size={22} color="#222" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.profileBox}>
+          <ActivityIndicator size="large" color="#3B5BFE" />
+          <Text style={styles.loadingText}>Đang tải thông tin...</Text>
+        </View>
+        <View style={styles.menuBox}>
+          {menuItems.map(item => (
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#888" />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Ionicons name="settings-outline" size={22} color="#222" />
+          <Text style={styles.headerTitle}>Hồ sơ</Text>
+          <TouchableOpacity onPress={fetchUserInfo} disabled={loading}>
+            <Ionicons name="refresh-outline" size={22} color="#222" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.profileBox}>
+          <Ionicons name="person-circle-outline" size={70} color="#ccc" />
+          <Text style={styles.name}>Không thể tải thông tin</Text>
+          <Text style={styles.email}>Vui lòng thử lại</Text>
+        </View>
+        <View style={styles.menuBox}>
+          {menuItems.map(item => (
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#888" />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <Ionicons name="settings-outline" size={22} color="#222" />
         <Text style={styles.headerTitle}>Hồ sơ</Text>
-        <Ionicons name="create-outline" size={22} color="#222" />
+        <TouchableOpacity onPress={fetchUserInfo} disabled={loading}>
+          <Ionicons name="refresh-outline" size={22} color="#222" />
+        </TouchableOpacity>
       </View>
       {/* Profile Box */}
       <View style={styles.profileBox}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
+        <Image 
+          source={{ 
+            uri: user.avata_url || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80' 
+          }} 
+          style={styles.avatar} 
+        />
         <Text style={styles.name}>{user.name}</Text>
         <Text style={styles.email}>{user.email}</Text>
       </View>
@@ -159,6 +250,11 @@ const styles = StyleSheet.create({
     color: '#FF3333',
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#888',
   },
   bottomNav: {
     flexDirection: 'row',

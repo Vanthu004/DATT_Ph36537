@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { userApi } from '../../utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SubAccountCreateScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -17,31 +18,88 @@ export default function SubAccountCreateScreen({ navigation }) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
       return;
     }
+    
+    // Kiểm tra định dạng email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Lỗi', 'Email không hợp lệ. Vui lòng kiểm tra lại.');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
       return;
     }
+    
+    if (password.length < 6) {
+      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+    
     setLoading(true);
     try {
+      // Lấy userId từ AsyncStorage
+      const userId = await AsyncStorage.getItem('userId');
+      console.log('SubAccountCreate - userId from AsyncStorage:', userId);
+      
+      if (!userId) {
+        // Thử lấy thông tin user từ API
+        console.log('SubAccountCreate - No userId in AsyncStorage, trying to get from API');
+        const currentUserRes = await userApi.getCurrentUser();
+        if (currentUserRes.success && currentUserRes.data) {
+          console.log('SubAccountCreate - Got user from API:', currentUserRes.data);
+        } else {
+          Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const userData = {
         name,
         email,
-        role,
         password,
         avata_url: avatarUrl,
+        // Không cần gửi role và parent_id nữa, backend sẽ tự động xử lý
       };
-      const res = await userApi.register(userData);
+      console.log('SubAccountCreate - userData being sent:', userData);
+      
+      const res = await userApi.createSubAccount(userData);
+      console.log('SubAccountCreate - register response:', res);
+      
       setLoading(false);
-      if (res.success) {
+      
+      if (res.success && res.data && res.data._id) {
+        console.log('SubAccountCreate - Success: Tài khoản phụ được tạo thành công');
         Alert.alert('Thành công', 'Tạo tài khoản phụ thành công!', [
-          { text: 'OK', onPress: () => navigation.goBack() },
+          { text: 'OK', onPress: () => {
+            // Refresh danh sách tài khoản phụ
+            navigation.goBack();
+          }},
         ]);
       } else {
-        Alert.alert('Lỗi', res.error || 'Tạo tài khoản phụ thất bại');
+        console.log('SubAccountCreate - Error response:', res);
+        // Xử lý lỗi từ API response
+        let errorMessage = 'Tạo tài khoản phụ thất bại';
+        
+        if (res.error) {
+          if (res.error.includes('duplicate key error') && res.error.includes('email')) {
+            errorMessage = 'Email này đã được sử dụng. Vui lòng chọn email khác.';
+          } else if (res.error.includes('email')) {
+            errorMessage = 'Email không hợp lệ. Vui lòng kiểm tra lại.';
+          } else {
+            errorMessage = res.error;
+          }
+        } else if (res.data && res.data.message) {
+          errorMessage = res.data.message;
+        }
+        
+        Alert.alert('Lỗi', errorMessage);
       }
     } catch (e) {
+      console.log('SubAccountCreate - error:', e);
       setLoading(false);
-      Alert.alert('Lỗi', 'Tạo tài khoản phụ thất bại');
+      Alert.alert('Lỗi', 'Tạo tài khoản phụ thất bại. Vui lòng thử lại.');
     }
   };
 

@@ -13,9 +13,11 @@ import SubAccountCreateScreen from '../Screens/main/SubAccountCreateScreen';
 import ChildManagementScreen from '../Screens/main/ChildManagementScreen';
 import ChildDetailScreen from '../Screens/main/ChildDetailScreen';
 import ChildCreateScreen from '../Screens/main/ChildCreateScreen';
+import AddReminderScreen from '../Screens/main/AddReminderScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createStackNavigator();
+const ReminderStack = createStackNavigator();
 
 function ProfileStackScreen({ onLogout }) {
   return (
@@ -30,6 +32,15 @@ function ProfileStackScreen({ onLogout }) {
       <ProfileStack.Screen name="ChildDetail" component={ChildDetailScreen} />
       <ProfileStack.Screen name="ChildCreate" component={ChildCreateScreen} />
     </ProfileStack.Navigator>
+  );
+}
+
+function ReminderStackScreen() {
+  return (
+    <ReminderStack.Navigator screenOptions={{ headerShown: false }}>
+      <ReminderStack.Screen name="ReminderList" component={ReminderListScreen} />
+      <ReminderStack.Screen name="AddReminder" component={AddReminderScreen} />
+    </ReminderStack.Navigator>
   );
 }
 
@@ -56,7 +67,7 @@ export default function MainNavigator({ onLogout }) {
       <Tab.Screen name="Trang chủ" component={HomeScreen} />
       <Tab.Screen name="Nhật ký" component={ActivityLogScreen} />
       <Tab.Screen name="Bài viết" component={PostListScreen} />
-      <Tab.Screen name="Nhắc lịch" component={ReminderListScreen} />
+      <Tab.Screen name="Nhắc lịch" component={ReminderStackScreen} />
       <Tab.Screen name="Cá nhân">
         {props => <ProfileStackScreen {...props} onLogout={onLogout} />}
       </Tab.Screen>

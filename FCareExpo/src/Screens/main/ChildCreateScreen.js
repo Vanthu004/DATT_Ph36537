@@ -1,21 +1,91 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { childApi } from '../../utils';
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80';
 
-export default function ChildCreateScreen({ navigation }) {
+export default function ChildCreateScreen({ navigation, route }) {
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
-  const [gender, setGender] = useState('Nam');
+  const [gender, setGender] = useState('male');
   const [hobby, setHobby] = useState('');
   const [avatar, setAvatar] = useState(defaultAvatar);
   const [loading, setLoading] = useState(false);
 
-  const handleChangeAvatar = () => {
-    // TODO: chọn ảnh mới
+  const handleChangeAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+      
+      if (!result.canceled && result.assets && result.assets[0].base64) {
+        setAvatar(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    } catch (err) {
+      Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại.');
+    }
+  };
+
+  const validateDate = (dateString) => {
+    // Kiểm tra format dd/mm/yyyy
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateString.match(dateRegex);
+    
+    if (!match) {
+      return { isValid: false, message: 'Định dạng ngày phải là dd/mm/yyyy' };
+    }
+    
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const year = parseInt(match[3], 10);
+    
+    // Kiểm tra ngày hợp lệ
+    if (day < 1 || day > 31) {
+      return { isValid: false, message: 'Ngày phải từ 01 đến 31' };
+    }
+    
+    if (month < 1 || month > 12) {
+      return { isValid: false, message: 'Tháng phải từ 01 đến 12' };
+    }
+    
+    if (year < 1900 || year > new Date().getFullYear()) {
+      return { isValid: false, message: 'Năm phải từ 1900 đến hiện tại' };
+    }
+    
+    // Kiểm tra ngày thực tế
+    const date = new Date(year, month - 1, day);
+    if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+      return { isValid: false, message: 'Ngày không hợp lệ' };
+    }
+    
+    return { isValid: true };
+  };
+
+  const handleDateChange = (text) => {
+    // Chỉ cho phép nhập số và dấu /
+    const cleaned = text.replace(/[^0-9/]/g, '');
+    
+    // Tự động thêm dấu /
+    let formatted = cleaned;
+    if (cleaned.length >= 2 && !cleaned.includes('/')) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+    }
+    if (formatted.length >= 5 && formatted.split('/').length === 2) {
+      formatted = formatted.slice(0, 5) + '/' + formatted.slice(5);
+    }
+    
+    // Giới hạn độ dài
+    if (formatted.length <= 10) {
+      setDob(formatted);
+    }
   };
 
   const handleCreate = async () => {
@@ -23,23 +93,68 @@ export default function ChildCreateScreen({ navigation }) {
       Alert.alert('Lỗi', 'Vui lòng nhập tên trẻ!');
       return;
     }
+
+    if (!dob.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập ngày sinh!');
+      return;
+    }
+
+    // Validate ngày sinh
+    const dateValidation = validateDate(dob);
+    if (!dateValidation.isValid) {
+      Alert.alert('Lỗi', dateValidation.message);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await childApi.createChild({
-        full_name: name,
-        dob,
+      // Lấy user ID từ AsyncStorage
+      const userId = await AsyncStorage.getItem('userId');
+      console.log('User ID từ AsyncStorage:', userId);
+      
+      if (!userId) {
+        Alert.alert('Lỗi', 'Không thể lấy thông tin người dùng. Vui lòng đăng nhập lại.');
+        setLoading(false);
+        return;
+      }
+
+      // Chuyển đổi ngày sinh từ dd/mm/yyyy về Date object
+      const [day, month, year] = dob.split('/');
+      const dobDate = new Date(year, month - 1, day);
+
+      const childData = {
+        parent_id: userId,
+        full_name: name.trim(),
+        dob: dobDate,
         gender,
-        hobby,
+        note: hobby.trim(),
         avatar,
-      });
-      if (res.success) {
+      };
+
+      console.log('Dữ liệu tạo trẻ:', childData);
+
+      const res = await childApi.createChild(childData);
+      console.log('Response createChild:', res);
+      
+      if (res.success && res.data) {
         Alert.alert('Thành công', 'Đã thêm trẻ!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+          { text: 'OK', onPress: () => {
+            // Refresh danh sách trẻ
+            navigation.goBack();
+          }}
         ]);
       } else {
-        Alert.alert('Lỗi', res.message || 'Thêm trẻ thất bại!');
+        console.log('Lỗi createChild:', res);
+        let errorMessage = 'Thêm trẻ thất bại!';
+        if (res.error) {
+          errorMessage = res.error;
+        } else if (res.message) {
+          errorMessage = res.message;
+        }
+        Alert.alert('Lỗi', errorMessage);
       }
     } catch (err) {
+      console.log('Lỗi khi tạo trẻ:', err);
       Alert.alert('Lỗi', 'Có lỗi xảy ra khi thêm trẻ!');
     }
     setLoading(false);
@@ -54,33 +169,65 @@ export default function ChildCreateScreen({ navigation }) {
         <Text style={styles.header}>Thêm trẻ</Text>
         <View style={{width: 24}} />
       </View>
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.avatarBox} onPress={handleChangeAvatar}>
-          <Image source={{ uri: avatar }} style={styles.avatar} />
-          <Text style={styles.changeAvatar}>Thay đổi</Text>
-        </TouchableOpacity>
-        <Text style={styles.label}>Tên trẻ</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} />
-        <Text style={styles.label}>Ngày sinh</Text>
-        <TextInput style={styles.input} value={dob} onChangeText={setDob} placeholder="dd/mm/yy" />
-        <Text style={styles.label}>Giới tính</Text>
-        <View style={styles.pickerBox}>
-          <Picker
-            selectedValue={gender}
-            onValueChange={setGender}
-            style={styles.picker}
-          >
-            <Picker.Item label="Nam" value="Nam" />
-            <Picker.Item label="Nữ" value="Nữ" />
-            <Picker.Item label="Khác" value="Khác" />
-          </Picker>
+      
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.avatarBox} onPress={handleChangeAvatar}>
+            <Image source={{ uri: avatar }} style={styles.avatar} />
+            <Text style={styles.changeAvatar}>Thay đổi</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.label}>Tên trẻ *</Text>
+          <TextInput 
+            style={styles.input} 
+            value={name} 
+            onChangeText={setName} 
+            placeholder="Nhập tên trẻ"
+          />
+          
+          <Text style={styles.label}>Ngày sinh *</Text>
+          <TextInput 
+            style={styles.input} 
+            value={dob} 
+            onChangeText={handleDateChange} 
+            placeholder="dd/mm/yyyy" 
+            keyboardType="numeric"
+            maxLength={10}
+          />
+          
+          <Text style={styles.label}>Giới tính *</Text>
+          <View style={styles.pickerBox}>
+            <Picker
+              selectedValue={gender}
+              onValueChange={setGender}
+              style={styles.picker}
+            >
+              <Picker.Item label="Nam" value="male" />
+              <Picker.Item label="Nữ" value="female" />
+              <Picker.Item label="Khác" value="other" />
+            </Picker>
+          </View>
+          
+          <Text style={styles.label}>Sở thích</Text>
+          <TextInput 
+            style={[styles.input, {height: 60}]} 
+            value={hobby} 
+            onChangeText={setHobby} 
+            multiline 
+            placeholder="Nhập sở thích của trẻ (không bắt buộc)" 
+          />
         </View>
-        <Text style={styles.label}>Sở thích</Text>
-        <TextInput style={[styles.input, {height: 60}]} value={hobby} onChangeText={setHobby} multiline placeholder="" />
-      </View>
-      <TouchableOpacity style={styles.addBtn} onPress={handleCreate} disabled={loading}>
+      </ScrollView>
+      
+      <TouchableOpacity 
+        style={[styles.addBtn, loading && styles.addBtnDisabled]} 
+        onPress={handleCreate} 
+        disabled={loading}
+      >
         <Ionicons name="add-circle-outline" size={20} color="#fff" />
-        <Text style={styles.addBtnText}>Thêm trẻ</Text>
+        <Text style={styles.addBtnText}>
+          {loading ? 'Đang thêm...' : 'Thêm trẻ'}
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -107,6 +254,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#222',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
   card: {
     backgroundColor: '#F5F5F5',
     borderRadius: 16,
@@ -116,6 +270,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     marginBottom: 20,
     paddingHorizontal: 16,
+    width: '90%',
   },
   avatarBox: {
     alignItems: 'center',
@@ -177,6 +332,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 16,
     marginBottom: 24,
+  },
+  addBtnDisabled: {
+    backgroundColor: '#ccc',
   },
   addBtnText: {
     color: '#fff',

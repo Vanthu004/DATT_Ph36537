@@ -72,7 +72,7 @@ export default function PostListScreen() {
       />
       {/* Button */}
       <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>Ghi lại nhật ký hoạt động mới</Text>
+        <Text style={styles.addButtonText}>Tạo bài viết mới</Text>
       </TouchableOpacity>
 
     </SafeAreaView>

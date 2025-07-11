@@ -7,6 +7,10 @@ const childSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    avatar: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Upload'
+    },
     avata_url: {
       type: String,
       default: ''

@@ -41,6 +41,37 @@ export const childApi = {
     const response = await apiService.get(API_ENDPOINTS.GET_CHILDREN, { parentId });
     return response;
   },
+
+  // Get children with assignment info for a specific sub account
+  getChildrenWithAssignment: async (userId) => {
+    const endpoint = API_ENDPOINTS.GET_CHILDREN_WITH_ASSIGNMENT.replace(':user_id', userId);
+    const response = await apiService.get(endpoint);
+    return response;
+  },
+
+  // Assign child to user
+  assignChildToUser: async (childId, userId) => {
+    const response = await apiService.post(API_ENDPOINTS.ASSIGN_CHILD, { child_id: childId, user_id: userId });
+    return response;
+  },
+
+  // Unassign child from user
+  unassignChildFromUser: async (childId, userId) => {
+    const response = await apiService.post(API_ENDPOINTS.UNASSIGN_CHILD, { child_id: childId, user_id: userId });
+    return response;
+  },
+
+  getUsersByChild: async (childId) => {
+    const endpoint = API_ENDPOINTS.GET_USERS_BY_CHILD.replace(':child_id', childId);
+    const response = await apiService.get(endpoint);
+    return response;
+  },
+
+  getChildrenByUser: async (userId) => {
+    const endpoint = API_ENDPOINTS.GET_CHILDREN_BY_USER.replace(':user_id', userId);
+    const response = await apiService.get(endpoint);
+    return response;
+  },
 };
 
 export default childApi; 

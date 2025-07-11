@@ -15,7 +15,9 @@ export const API_ENDPOINTS = {
   // User endpoints
   LOGIN: '/users/login',
   REGISTER: '/users',
+  CREATE_SUB_ACCOUNT: '/users/sub-account',
   GET_USER_BY_ID: '/users/:id',
+  GET_CURRENT_USER: '/users/me',
   UPDATE_USER: '/users/:id',
   DELETE_USER: '/users/:id',
   FORGOT_PASSWORD: '/users/forgot-password',
@@ -35,6 +37,13 @@ export const API_ENDPOINTS = {
   UPDATE_CHILD: '/children/:id',
   DELETE_CHILD: '/children/:id',
   
+  // Assigned Child endpoints
+  ASSIGN_CHILD: '/assigned-child/assign',
+  UNASSIGN_CHILD: '/assigned-child/unassign',
+  GET_CHILDREN_BY_USER: '/assigned-child/by-user/:user_id',
+  GET_USERS_BY_CHILD: '/assigned-child/by-child/:child_id',
+  GET_CHILDREN_WITH_ASSIGNMENT: '/assigned-child/children-with-assignment/:user_id',
+  
   // Payment endpoints
   GET_PAYMENTS: '/payments',
   CREATE_PAYMENT: '/payments',
@@ -46,6 +55,7 @@ export const API_ENDPOINTS = {
   GET_REMINDER_BY_ID: '/reminders/:id',
   UPDATE_REMINDER: '/reminders/:id',
   DELETE_REMINDER: '/reminders/:id',
+  GET_REMINDERS_BY_CHILD: '/reminders/child/:child_id',
   
   // Support endpoints
   GET_SUPPORT_TICKETS: '/support',

@@ -53,6 +53,13 @@ export const reminderApi = {
     const response = await apiService.get(API_ENDPOINTS.GET_REMINDERS, { upcoming: days });
     return response;
   },
+
+  // Get reminders by child
+  getRemindersByChild: async (childId) => {
+    const endpoint = API_ENDPOINTS.GET_REMINDERS_BY_CHILD.replace(':child_id', childId);
+    const response = await apiService.get(endpoint);
+    return response;
+  },
 };
 
 export default reminderApi; 

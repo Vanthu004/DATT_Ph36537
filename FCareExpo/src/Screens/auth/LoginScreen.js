@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { userApi } from '../../utils';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../store/userSlice';
 
 export default function LoginScreen({ navigation, onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -15,9 +18,11 @@ export default function LoginScreen({ navigation, onLogin }) {
     setLoading(true);
     try {
       const response = await userApi.login(email, password);
+      console.log('LoginScreen - response:', response);
       if (response.success) {
-        userApi.setToken(response.data.token);
-        if (onLogin) onLogin(response.data.token);
+        userApi.setToken(response.token);
+        dispatch(setUser(response.data)); // Lưu user vào Redux
+        if (onLogin) onLogin(response.token, response.data);
         setLoading(false);
         // KHÔNG navigation.replace('Home') nữa
       } else {

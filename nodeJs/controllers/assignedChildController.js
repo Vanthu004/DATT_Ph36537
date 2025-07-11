@@ -1,4 +1,5 @@
 const AssignedChild = require("../models/AssignedChild");
+const Child = require("../models/Child");
 
 // ✅ Gán trẻ cho tài khoản phụ
 exports.assignChildToUser = async (req, res) => {
@@ -43,8 +44,11 @@ exports.getChildrenByUser = async (req, res) => {
 
   try {
     const children = await AssignedChild.find({ user_id }).populate("child_id");
-
-    res.json({ success: true, data: children });
+    // Trả về mảng các object trẻ đã populate
+    const childObjects = children
+      .map(item => item.child_id)
+      .filter(child => !!child); // loại bỏ null nếu có
+    res.json({ success: true, data: childObjects });
   } catch (err) {
     res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
   }
@@ -59,6 +63,44 @@ exports.getUsersByChild = async (req, res) => {
 
     res.json({ success: true, data: users });
   } catch (err) {
+    res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
+  }
+};
+
+// 📋 Lấy tất cả trẻ với thông tin gán cho tài khoản phụ cụ thể
+exports.getAllChildrenWithAssignment = async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    console.log('User info:', { id: req.user.id, role: req.user.role });
+    console.log('Requested user_id:', user_id);
+    
+    // Chỉ parent hoặc parent_main mới có thể xem và quản lý gán trẻ cho sub-accounts
+    if (req.user.role !== 'parent' && req.user.role !== 'parent_main') {
+      return res.status(403).json({ success: false, message: "Chỉ tài khoản chính mới có thể quản lý gán trẻ." });
+    }
+
+    // Lấy tất cả trẻ của parent đang đăng nhập
+    const allChildren = await Child.find({ parent_id: req.user.id });
+    console.log('Found children:', allChildren.length);
+    
+    // Lấy danh sách trẻ đã được gán cho tài khoản phụ này
+    const assignedChildren = await AssignedChild.find({ user_id }).populate("child_id");
+    const assignedChildIds = assignedChildren.map(ac => ac.child_id._id.toString());
+    console.log('Assigned child IDs:', assignedChildIds);
+    
+    // Thêm thông tin gán vào mỗi trẻ
+    const childrenWithAssignment = allChildren.map(child => ({
+      ...child.toObject(),
+      isAssigned: assignedChildIds.includes(child._id.toString())
+    }));
+
+    res.json({ 
+      success: true, 
+      data: childrenWithAssignment 
+    });
+  } catch (err) {
+    console.error('Error in getAllChildrenWithAssignment:', err);
     res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
   }
 };
