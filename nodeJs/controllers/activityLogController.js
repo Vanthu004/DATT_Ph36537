@@ -12,10 +12,23 @@ exports.createLog = async (req, res) => {
 
 // Lấy tất cả log
 exports.getAllLogs = async (req, res) => {
-  const logs = await ActivityLog.find()
-    .populate('child_id', 'full_name')
-    .populate('user_id', 'name');
-  res.json(logs);
+  try {
+    const { childId, date } = req.query;
+    let query = {};
+    if (childId) query.child_id = childId;
+    if (date) {
+      // Lọc theo ngày (bỏ giờ)
+      const start = new Date(date);
+      start.setHours(0,0,0,0);
+      const end = new Date(date);
+      end.setHours(23,59,59,999);
+      query.date = { $gte: start, $lte: end };
+    }
+    const logs = await ActivityLog.find(query);
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Lấy log theo id

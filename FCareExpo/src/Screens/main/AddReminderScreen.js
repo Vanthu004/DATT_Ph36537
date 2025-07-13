@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import childApi from '../../utils/childApi';
 import reminderApi from '../../utils/reminderApi';
 import { useSelector } from 'react-redux';
-import * as Notifications from 'expo-notifications';
 
 export default function AddReminderScreen({ navigation }) {
   // Lấy userId chắc chắn từ Redux

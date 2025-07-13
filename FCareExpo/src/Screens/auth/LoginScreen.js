@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation, onLogin }) {
         dispatch(setUser(response.data)); // Lưu user vào Redux
         if (onLogin) onLogin(response.token, response.data);
         setLoading(false);
-        // KHÔNG navigation.replace('Home') nữa
+        // navigation.replace('Home'); // Chuyển sang màn hình chính sau khi đăng nhập thành công
       } else {
         setLoading(false);
         Alert.alert('Lỗi', response.error || 'Đăng nhập thất bại');
