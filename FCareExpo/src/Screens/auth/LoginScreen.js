@@ -18,13 +18,18 @@ export default function LoginScreen({ navigation, onLogin }) {
     setLoading(true);
     try {
       const response = await userApi.login(email, password);
-      console.log('LoginScreen - response:', response);
       if (response.success) {
         userApi.setToken(response.token);
-        dispatch(setUser(response.data)); // Lưu user vào Redux
+        // Gọi API lấy user chi tiết (nếu cần)
+        const userInfo = await userApi.getCurrentUser();
+        if (userInfo && userInfo.success && userInfo.data) {
+          dispatch(setUser(userInfo.data));
+        } else {
+          dispatch(setUser(response.data)); // fallback nếu không có API getCurrentUser
+        }
         if (onLogin) onLogin(response.token, response.data);
         setLoading(false);
-        // navigation.replace('Home'); // Chuyển sang màn hình chính sau khi đăng nhập thành công
+        // navigation.replace('Home');
       } else {
         setLoading(false);
         Alert.alert('Lỗi', response.error || 'Đăng nhập thất bại');

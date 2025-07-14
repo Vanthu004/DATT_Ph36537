@@ -17,11 +17,14 @@ import AddReminderScreen from '../Screens/main/AddReminderScreen';
 import ReminderDetailScreen from '../Screens/main/ReminderDetailScreen';
 import AddActivityLog from '../Screens/main/AddActivityLogScreen';
 import DetailActivity from '../Screens/main/ActivityLogDetailScreen';
+import AddPost from '../Screens/main/AddPostScreen';
+import PostDetail from '../Screens/main/PostDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createStackNavigator();
 const ReminderStack = createStackNavigator();
 const ActivityStack = createStackNavigator();
+const PostNaivgation = createStackNavigator();
 
 function ProfileStackScreen({ onLogout }) {
   return (
@@ -58,7 +61,15 @@ function ActivityStackScreen() {
     </ActivityStack.Navigator>
   );
 }
-
+function PostStackScreen() {
+  return (
+    <PostNaivgation.Navigator screenOptions={{ headerShown: false }}>
+      <PostNaivgation.Screen name="PostList" component={PostListScreen} />
+      <PostNaivgation.Screen name="AddPost" component={AddPost} />
+      <PostNaivgation.Screen name="PostDetail" component={PostDetail} />
+    </PostNaivgation.Navigator>
+  );
+}
 
 export default function MainNavigator({ onLogout }) {
   return (
@@ -82,7 +93,7 @@ export default function MainNavigator({ onLogout }) {
     >
       <Tab.Screen name="Trang chủ" component={HomeScreen} />
       <Tab.Screen name="Nhật ký" component={ActivityStackScreen} />
-      <Tab.Screen name="Bài viết" component={PostListScreen} />
+      <Tab.Screen name="Bài viết" component={PostStackScreen} />
       <Tab.Screen name="Nhắc lịch" component={ReminderStackScreen} />
       <Tab.Screen name="Cá nhân">
         {props => <ProfileStackScreen {...props} onLogout={onLogout} />}

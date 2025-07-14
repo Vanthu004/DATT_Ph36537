@@ -16,6 +16,10 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    images: {
+      type: [String],
+      default: [],
+    },
     visibility: {
       type: String,
       enum: ['family', 'community'],

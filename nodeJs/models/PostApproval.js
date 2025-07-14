@@ -9,7 +9,7 @@ const postApprovalSchema = new mongoose.Schema({
   approved_by: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User', // Admin
-    required: true,
+    required: false,
   },
   approved_at: {
     type: Date,

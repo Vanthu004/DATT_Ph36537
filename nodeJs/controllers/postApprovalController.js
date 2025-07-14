@@ -47,18 +47,31 @@ exports.getApprovalById = async (req, res) => {
 // Cập nhật trạng thái kiểm duyệt
 exports.updateApproval = async (req, res) => {
   const { status, note } = req.body;
+  const adminId = req.user?.id; // Lấy từ middleware xác thực, hoặc req.body.approved_by nếu frontend truyền lên
+
+  const updateData = {
+    status,
+    note,
+    approved_at: new Date()
+  };
+  if (adminId) updateData.approved_by = adminId;
 
   const approval = await PostApproval.findByIdAndUpdate(
     req.params.id,
-    {
-      status,
-      note,
-      approved_at: new Date()
-    },
+    updateData,
     { new: true }
   );
 
   if (!approval) return res.status(404).json({ message: 'Không tìm thấy phê duyệt' });
+
+  // Cập nhật trạng thái bài viết gốc
+  if (approval.post_id) {
+    await require('../models/Post').findByIdAndUpdate(
+      approval.post_id,
+      { status: status }
+    );
+  }
+
   res.json(approval);
 };
 

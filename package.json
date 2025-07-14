@@ -1,1 +1,23 @@
-{}
+{
+  "name": "fmcarer-server",
+  "version": "1.0.0",
+  "description": "FMCarer Server with Admin Panel",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd nodeJs && npm run dev",
+    "dev:frontend": "cd admin && npm run dev",
+    "install:all": "npm install && cd nodeJs && npm install && cd ../admin && npm install",
+    "build": "cd admin && npm run build",
+    "start": "cd nodeJs && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.6.3"
+  }
+}
