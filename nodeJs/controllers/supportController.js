@@ -4,23 +4,31 @@ const User = require('../models/user');
 // Tạo ticket
 exports.createTicket = async (req, res) => {
   try {
-    const { user_id, title, messege } = req.body;
+    const { user_id, title, messege, images } = req.body;
     const user = await User.findById(user_id);
     if (!user) return res.status(400).json({ message: 'user_id không tồn tại' });
 
-    const ticket = await SupportTicket.create({ user_id, title, messege });
+    const ticket = await SupportTicket.create({ user_id, title, messege, images });
     res.status(201).json(ticket);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Lấy tất cả ticket
-exports.getAllTickets = async (_req, res) => {
-  const tickets = await SupportTicket.find()
+// Lấy tất cả ticket (có thể lọc theo userId)
+exports.getAllTickets = async (req, res) => {
+  const { userId } = req.query;
+  let query = {};
+  if (userId) {
+    query.user_id = userId;
+  }
+  const tickets = await SupportTicket.find(query)
     .populate('user_id', 'name email')
     .populate('resolved_by', 'name');
-  res.json(tickets);
+  res.json({
+    success: true,
+    data: tickets
+  });
 };
 
 // Lấy 1 ticket theo ID

@@ -22,6 +22,7 @@ import {
   clearReminders,
 } from '../../store/reminderSlice';
 import { useFocusEffect } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function ReminderListScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -33,6 +34,8 @@ export default function ReminderListScreen({ navigation }) {
   
   const [showChildSelector, setShowChildSelector] = useState(false);
   const [hasFetchedChildren, setHasFetchedChildren] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Memoize dispatch functions to prevent infinite loops
   const fetchChildrenForParent = useCallback(() => {
@@ -191,9 +194,12 @@ export default function ReminderListScreen({ navigation }) {
   };
 
   const renderReminderItem = useCallback(({ item }) => {
+    // Kiểm tra ngày đang xem đã hoàn thành chưa
+    const ymd = new Date(selectedDate).toISOString().slice(0,10);
+    const isCompleted = Array.isArray(item.completedDates) && item.completedDates.some(d => new Date(d).toISOString().slice(0,10) === ymd);
     return (
       <TouchableOpacity onPress={() => navigation.navigate('ReminderDetail', { reminder: item, childName: selectedChild?.full_name || selectedChild?.name })}>
-        <View style={styles.reminderCard}>
+        <View style={[styles.reminderCard, isCompleted && { backgroundColor: '#B2F2BB' }]}> 
           <View style={styles.reminderRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.reminderTitle}>{item.title}</Text>
@@ -203,14 +209,14 @@ export default function ReminderListScreen({ navigation }) {
           <Text style={styles.reminderDescription}>{item.description}</Text>
           <View style={styles.reminderFooterRow}>
             <Ionicons name="calendar-outline" size={16} color="#888" style={{ marginRight: 4 }} />
-            <Text style={styles.reminderDateLabel}>{formatDateLabel(item.time)}</Text>
+            <Text style={styles.reminderDateLabel}>{formatDateLabel(selectedDate)}</Text>
             <View style={{ flex: 1 }} />
             <Ionicons name="chevron-forward" size={20} color="#888" />
           </View>
         </View>
       </TouchableOpacity>
     );
-  }, [navigation, selectedChild]);
+  }, [navigation, selectedChild, selectedDate]);
 
   const renderChildItem = useCallback(({ item }) => (
     <TouchableOpacity
@@ -279,6 +285,95 @@ export default function ReminderListScreen({ navigation }) {
     </Modal>
   ), [showChildSelector, childrenLoading, childrenError, assignedChildren, user, handleRetryFetchChildren, renderChildItem]);
 
+  const handleCalendarPress = () => {
+    setShowDatePicker(true);
+  };
+
+  // Hàm kiểm tra reminder có hiển thị cho ngày hôm nay không
+  const isReminderForToday = (reminder) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const reminderTime = new Date(reminder.time);
+    const endDate = reminder.endDate ? new Date(reminder.endDate) : null;
+
+    // Nếu có endDate và đã hết hạn thì không hiển thị
+    if (endDate && endDate < today) return false;
+
+    // Nếu là daily: luôn hiển thị nếu chưa hết hạn
+    if (reminder.repeat_type === 'daily') return true;
+
+    // Nếu là weekly: kiểm tra thứ trong tuần
+    if (reminder.repeat_type === 'weekly') {
+      return reminderTime.getDay() === now.getDay();
+    }
+
+    // Nếu là monthly: kiểm tra ngày trong tháng
+    if (reminder.repeat_type === 'monthly') {
+      return reminderTime.getDate() === now.getDate();
+    }
+
+    // Nếu không lặp lại: chỉ hiển thị nếu đúng ngày hôm nay
+    return (
+      reminderTime.getDate() === now.getDate() &&
+      reminderTime.getMonth() === now.getMonth() &&
+      reminderTime.getFullYear() === now.getFullYear()
+    );
+  };
+
+  // Sửa hàm lọc reminder để dùng selectedDate
+  const isReminderForSelectedDate = (reminder) => {
+    const date = new Date(selectedDate);
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Sử dụng startDate nếu có, nếu không thì dùng time
+    const baseDate = reminder.startDate ? new Date(reminder.startDate) : new Date(reminder.time);
+    const startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+    const endDate = reminder.endDate ? new Date(reminder.endDate) : null;
+
+    if (endDate) {
+      const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      if (target > end) return false;
+    }
+    if (target < startDate) return false;
+
+    if (reminder.repeat_type === 'daily') {
+      return true;
+    }
+    if (reminder.repeat_type === 'weekly') {
+      // Hiển thị vào đúng thứ trong tuần, cho tất cả các tuần sau startDate
+      if (startDate.getDay() !== target.getDay()) return false;
+      // Số ngày giữa target và startDate
+      const diffDays = Math.floor((target - startDate) / (1000 * 60 * 60 * 24));
+      return diffDays % 7 === 0 && diffDays >= 0;
+    }
+    if (reminder.repeat_type === 'monthly') {
+      // Hiển thị vào đúng ngày trong tháng, cho tất cả các tháng sau startDate
+      if (startDate.getDate() !== target.getDate()) return false;
+      // target phải >= startDate
+      return target >= startDate;
+    }
+    if (reminder.repeat_type === 'custom' && Array.isArray(reminder.customDates)) {
+      return reminder.customDates.some(dateStr => {
+        const custom = new Date(dateStr);
+        const customYMD = custom.toISOString().slice(0,10);
+        const targetYMD = target.toISOString().slice(0,10);
+        return customYMD === targetYMD;
+      });
+    }
+    // Không lặp lại: chỉ hiển thị đúng ngày
+    return (
+      baseDate.getDate() === target.getDate() &&
+      baseDate.getMonth() === target.getMonth() &&
+      baseDate.getFullYear() === target.getFullYear()
+    );
+  };
+
+  // Chỉ cho phép parent_sub xem lịch của ngày hôm nay
+  useEffect(() => {
+    if (user && user.role === 'parent_sub') {
+      setSelectedDate(new Date());
+    }
+  }, [user]);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -290,9 +385,30 @@ export default function ReminderListScreen({ navigation }) {
           <Ionicons name="chevron-back" size={24} color="#222" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Lịch nhắc nhở</Text>
-        <View style={styles.headerRight} />
+        {/* Nút chọn ngày chỉ cho phép nếu không phải parent_sub */}
+        {user?.role !== 'parent_sub' && (
+          <TouchableOpacity onPress={handleCalendarPress}>
+            <Ionicons name="calendar-outline" size={25} color="#000" style={{ marginRight: 4 }} />
+          </TouchableOpacity>
+        )}
       </View>
-
+      {showDatePicker && user?.role !== 'parent_sub' && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowDatePicker(false);
+            if (date) setSelectedDate(date);
+          }}
+        />
+      )}
+      {/* Nút quay lại hôm nay nếu đang xem ngày khác */}
+      {selectedDate && !isToday(selectedDate) && user?.role !== 'parent_sub' && (
+        <TouchableOpacity style={{ alignSelf: 'center', marginVertical: 8 }} onPress={() => setSelectedDate(new Date())}>
+          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Quay về hôm nay</Text>
+        </TouchableOpacity>
+      )}
       {/* Loading state when user is not loaded */}
       {!user ? (
         <View style={styles.loadingContainer}>
@@ -327,12 +443,15 @@ export default function ReminderListScreen({ navigation }) {
                 <Text style={styles.remindersTitle}>
                   Lịch nhắc nhở của {selectedChild.name || selectedChild.full_name}
                 </Text>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => navigation.navigate('AddReminder', { childId: selectedChild._id })}
-                >
-                  <Ionicons name="add" size={20} color="#fff" />
-                </TouchableOpacity>
+                {/* Nút thêm nhắc lịch chỉ cho phép nếu không phải parent_sub */}
+                {user?.role !== 'parent_sub' && (
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => navigation.navigate('AddReminder', { childId: selectedChild._id })}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {remindersLoading ? (
@@ -350,7 +469,7 @@ export default function ReminderListScreen({ navigation }) {
                 </View>
               ) : reminders && reminders.length > 0 ? (
                 <FlatList
-                  data={reminders}
+                  data={reminders.filter(isReminderForSelectedDate)}
                   keyExtractor={(item) => item._id}
                   renderItem={renderReminderItem}
                   showsVerticalScrollIndicator={false}
@@ -360,12 +479,15 @@ export default function ReminderListScreen({ navigation }) {
                 <View style={styles.emptyState}>
                   <Ionicons name="calendar-outline" size={64} color="#ccc" />
                   <Text style={styles.emptyText}>Chưa có lịch nhắc nhở nào</Text>
-                  <TouchableOpacity
-                    style={styles.addFirstButton}
-                    onPress={() => navigation.navigate('AddReminder', { childId: selectedChild._id })}
-                  >
-                    <Text style={styles.addFirstButtonText}>Tạo lịch nhắc nhở đầu tiên</Text>
-                  </TouchableOpacity>
+                  {/* Nút tạo nhắc nhở đầu tiên chỉ cho phép nếu không phải parent_sub */}
+                  {user?.role !== 'parent_sub' && (
+                    <TouchableOpacity
+                      style={styles.addFirstButton}
+                      onPress={() => navigation.navigate('AddReminder', { childId: selectedChild._id })}
+                    >
+                      <Text style={styles.addFirstButtonText}>Tạo lịch nhắc nhở đầu tiên</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>

@@ -19,6 +19,9 @@ import AddActivityLog from '../Screens/main/AddActivityLogScreen';
 import DetailActivity from '../Screens/main/ActivityLogDetailScreen';
 import AddPost from '../Screens/main/AddPostScreen';
 import PostDetail from '../Screens/main/PostDetailScreen';
+import SupportScreen from '../Screens/main/SupportScreen';
+import CreateSupportScreen from '../Screens/main/CreateSport';
+import SupportDetailScreen from '../Screens/main/SupportDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createStackNavigator();
@@ -37,7 +40,9 @@ function ProfileStackScreen({ onLogout }) {
       <ProfileStack.Screen name="SubAccountCreate" component={SubAccountCreateScreen} />
       <ProfileStack.Screen name="ChildManagement" component={ChildManagementScreen} />
       <ProfileStack.Screen name="ChildDetail" component={ChildDetailScreen} />
-      <ProfileStack.Screen name="ChildCreate" component={ChildCreateScreen} />
+      <ProfileStack.Screen name="SupportScreen" component={SupportScreen} />
+      <ProfileStack.Screen name="CreateSupportScreen" component={CreateSupportScreen} />
+      <ProfileStack.Screen name="SupportDetailScreen" component={SupportDetailScreen} />
     </ProfileStack.Navigator>
   );
 }

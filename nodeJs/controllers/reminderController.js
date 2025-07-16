@@ -37,9 +37,28 @@ exports.getRemindersByChild = async (req, res) => {
 
 // Cập nhật reminder
 exports.updateReminder = async (req, res) => {
-  const updated = await Reminder.findByIdAndUpdate(req.params.id, req.body, {
-    new: true
-  });
+  const { completedDate, ...updateData } = req.body;
+  let updated;
+  if (completedDate) {
+    // Push ngày hoàn thành vào mảng completedDates nếu chưa có
+    updated = await Reminder.findByIdAndUpdate(
+      req.params.id,
+      { $addToSet: { completedDates: new Date(completedDate) } },
+      { new: true }
+    );
+    // Có thể update thêm các trường khác nếu cần
+    if (Object.keys(updateData).length > 0) {
+      updated = await Reminder.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      );
+    }
+  } else {
+    updated = await Reminder.findByIdAndUpdate(req.params.id, updateData, {
+      new: true
+    });
+  }
   if (!updated) return res.status(404).json({ message: 'Không tìm thấy' });
   res.json(updated);
 };

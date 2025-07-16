@@ -5,6 +5,8 @@ import apiService from '../../utils/apiService';
 import { API_ENDPOINTS, API_CONFIG } from '../../utils/apiConfig';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
+import { useEffect } from 'react';
+import { userApi } from '../../utils/userApi';
 
 export default function ActivityLogDetailScreen({ route, navigation }) {
   const { log } = route.params || {};
@@ -16,6 +18,25 @@ export default function ActivityLogDetailScreen({ route, navigation }) {
   const [note, setNote] = useState(log.note || '');
   const [image, setImage] = useState(log.image || '');
   const [loading, setLoading] = useState(false);
+  const [creatorName, setCreatorName] = useState('');
+
+  useEffect(() => {
+    const fetchCreator = async () => {
+      if (log.user_id && typeof log.user_id === 'string') {
+        const res = await userApi.getUserById(log.user_id);
+        if (res.success && res.data) {
+          setCreatorName(res.data.name || res.data.email || log.user_id);
+        } else {
+          setCreatorName(log.user_id);
+        }
+      } else if (log.user_id && typeof log.user_id === 'object') {
+        setCreatorName(log.user_id.name || log.user_id.email || '');
+      } else {
+        setCreatorName('');
+      }
+    };
+    fetchCreator();
+  }, [log.user_id]);
 
   // Hàm chọn và upload ảnh mới
   const pickAndUploadImage = async () => {
@@ -155,15 +176,26 @@ export default function ActivityLogDetailScreen({ route, navigation }) {
             multiline
           />
           {image ? (
-            <TouchableOpacity
-              onPress={isEditing ? pickAndUploadImage : undefined}
-              activeOpacity={isEditing ? 0.7 : 1}
-              style={{ alignSelf: 'center' }}
-            >
-              <Image source={{ uri: image }} style={styles.previewImage} />
-              {isEditing && <Text style={{ textAlign: 'center', color: '#3B5BFE', marginTop: 4 }}>Thay đổi ảnh</Text>}
-            </TouchableOpacity>
+            isEditing ? (
+              <TouchableOpacity
+                onPress={pickAndUploadImage}
+                activeOpacity={0.7}
+                style={{ alignItems: 'center', marginVertical: 8 }}
+              >
+                <Image source={{ uri: image }} style={styles.previewImage} />
+                <Text style={{ textAlign: 'center', color: '#3B5BFE', marginTop: 4 }}>Thay đổi ảnh</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ alignItems: 'center', marginVertical: 8 }}>
+                <Image source={{ uri: image }} style={styles.previewImage} />
+              </View>
+            )
           ) : null}
+      <View style={{ paddingHorizontal: 20, paddingBottom: 16, marginTop: 8 }}>
+        <Text style={{ color: '#888', fontSize: 14, textAlign: 'center' }}>
+          Người tạo hoạt động: {creatorName || 'Không xác định'}
+        </Text>
+      </View>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 32, marginTop: 16 }}>
           <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isEditing ? '#3B5BFE' : '#E8EDFF' }]} onPress={handleEdit} disabled={loading}>
@@ -176,6 +208,8 @@ export default function ActivityLogDetailScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      {/* Hiển thị người tạo hoạt động */}
+
     </SafeAreaView>
   );
 }
@@ -220,10 +254,12 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: 120,
+    height: 150,
     borderRadius: 10,
     alignSelf: 'center',
     marginVertical: 8,
+    resizeMode:"contain"
+
   },
   saveBtn: {
     flexDirection: 'row',

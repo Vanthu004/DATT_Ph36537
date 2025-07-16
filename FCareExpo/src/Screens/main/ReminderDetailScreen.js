@@ -2,16 +2,25 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import { deleteReminder, fetchRemindersByChild } from '../../store/reminderSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteReminder, fetchRemindersByChild, updateReminder } from '../../store/reminderSlice';
 
 export default function ReminderDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
   const { reminder, childName } = route.params; // reminder: object, childName: string
-  const [completed, setCompleted] = useState(false);
+  const selectedDate = useSelector(state => state.reminder.selectedDate) || new Date();
+  // completedDates là mảng ngày đã hoàn thành
+  const [completedDates, setCompletedDates] = useState(reminder.completedDates || []);
   const [deleting, setDeleting] = useState(false);
+
+  // Kiểm tra ngày đang xem đã hoàn thành chưa
+  const isCompletedForDate = (date) => {
+    const ymd = new Date(date).toISOString().slice(0,10);
+    return completedDates.some(d => new Date(d).toISOString().slice(0,10) === ymd);
+  };
+  const completed = isCompletedForDate(selectedDate);
 
   // Format time
   const formatTime = (dateTime) => {
@@ -35,6 +44,7 @@ export default function ReminderDetailScreen() {
     return date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   };
   const formatDateLabel = (dateTime) => {
+    if (!dateTime) return '';
     if (isToday(dateTime)) return 'Hôm nay';
     const date = new Date(dateTime);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -66,9 +76,15 @@ export default function ReminderDetailScreen() {
   };
 
   // Xử lý hoàn thành
-  const handleComplete = () => {
-    setCompleted(true);
-    // Có thể dispatch action cập nhật trạng thái nếu muốn lưu vào DB
+  const handleComplete = async () => {
+    try {
+      const ymd = new Date(selectedDate).toISOString().slice(0,10);
+      await dispatch(updateReminder({ id: reminder._id, reminderData: { completedDate: ymd } })).unwrap();
+      setCompletedDates(prev => [...prev, ymd]);
+      Alert.alert('Thành công', 'Đã đánh dấu hoàn thành cho ngày này!');
+    } catch (err) {
+       Alert.alert('Thành công', 'Đã đánh dấu hoàn thành cho ngày này!');
+    }
   };
 
   return (
@@ -93,17 +109,30 @@ export default function ReminderDetailScreen() {
         <Text style={styles.repeat}>{getRepeatLabel(reminder.repeat_type)}</Text>
         <Text style={styles.label}>Ngày</Text>
         <Text style={styles.date}>{formatDateLabel(reminder.time)}</Text>
+        {/* Hiển thị thời gian bắt đầu/kết thúc lặp lại nếu có */}
+        {reminder.startDate && (
+          <>
+            <Text style={styles.label}>Thời gian bắt đầu lặp lại</Text>
+            <Text style={styles.date}>{formatDateLabel(reminder.startDate)}</Text>
+          </>
+        )}
+        {reminder.endDate && (
+          <>
+            <Text style={styles.label}>Thời gian kết thúc lặp lại</Text>
+            <Text style={styles.date}>{formatDateLabel(reminder.endDate)}</Text>
+          </>
+        )}
         <Text style={styles.label}>Đứa Trẻ</Text>
         <Text style={styles.childName}>{childName}</Text>
       </View>
       {/* Actions */}
       <TouchableOpacity
-        style={styles.completeBtn}
+        style={[styles.completeBtn, completed && { backgroundColor: '#aaa' }]}
         onPress={handleComplete}
         disabled={completed}
       >
         <Ionicons name="thumbs-up" size={20} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.completeBtnText}>Đánh dấu đã hoàn thành</Text>
+        <Text style={styles.completeBtnText}>{completed ? 'Đã hoàn thành' : 'Đánh dấu đã hoàn thành'}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.deleteBtn}

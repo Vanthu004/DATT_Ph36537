@@ -49,16 +49,22 @@ export default function PostListScreen({navigation}) {
 
   // Lọc lại ở FE cho family/community: chỉ hiển thị bài viết family của user chính và các tài khoản phụ, và community đã duyệt
   const filteredPosts = React.useMemo(() => {
+    let result = posts;
     if (filter.value === 'family' && user) {
-      return posts.filter(
+      result = result.filter(
         post => post.user_id && (post.user_id._id === user._id || post.user_id.parent_id === user._id || post.user_id._id === user.parent_id)
       );
     }
     if (filter.value === 'community') {
-      return posts.filter(post => post.visibility === 'community' && post.status === 'approved');
+      result = result.filter(post => post.visibility === 'community' && post.status === 'approved');
     }
-    return posts;
-  }, [posts, filter, user]);
+    // Thêm lọc theo tên bài viết
+    if (search.trim()) {
+      const searchLower = search.trim().toLowerCase();
+      result = result.filter(post => post.title && post.title.toLowerCase().includes(searchLower));
+    }
+    return result;
+  }, [posts, filter, user, search]);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => navigation.navigate('PostDetail', { postId: item._id })}>
@@ -86,7 +92,13 @@ export default function PostListScreen({navigation}) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bài viết</Text>
-        <Ionicons name="add-circle-outline" size={26} color="#222" />
+        {/* Button thêm bài viết chỉ cho phép nếu không phải parent_sub */}
+        {user?.role !== 'parent_sub' && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AddPost")}> 
+            <Ionicons name="add-circle-outline" size={26} color="#222" />
+          </TouchableOpacity>
+        )}
       </View>
       {/* Search */}
       <View style={styles.searchBox}>
@@ -131,11 +143,7 @@ export default function PostListScreen({navigation}) {
           showsVerticalScrollIndicator={false}
         />
       )}
-      {/* Button */}
-      <TouchableOpacity style={styles.addButton}
-      onPress={() => navigation.navigate("AddPost")}> 
-        <Text style={styles.addButtonText}>Tạo bài viết mới</Text>
-      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }

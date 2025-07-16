@@ -42,7 +42,7 @@ export default function AddActivityLogScreen({ navigation, route }) {
         return '';
       }
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể upload ảnh.');
+      Alert.alert('Lỗi', 'Chưa upload ảnh.');
       console.log('Upload image error:', err);
       return '';
     }

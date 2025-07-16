@@ -20,6 +20,14 @@ export default function AddReminderScreen({ navigation }) {
   const [selectedChild, setSelectedChild] = useState(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [endDate, setEndDate] = useState(null);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState(null);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [startCustomDate, setStartCustomDate] = useState(null);
+  const [endCustomDate, setEndCustomDate] = useState(null);
+  const [showStartCustomDatePicker, setShowStartCustomDatePicker] = useState(false);
+  const [showEndCustomDatePicker, setShowEndCustomDatePicker] = useState(false);
 
   useEffect(() => {
     if (reduxSelectedChild) {
@@ -39,6 +47,7 @@ export default function AddReminderScreen({ navigation }) {
       case 'daily': return 'daily';
       case 'weekly': return 'weekly';
       case 'monthly': return 'monthly';
+      case 'custom': return 'custom'; // BỔ SUNG DÒNG NÀY
       default: return 'none';
     }
   };
@@ -76,10 +85,35 @@ export default function AddReminderScreen({ navigation }) {
         title,
         description,
         time: reminderTime.toISOString(),
-        repeat_type: mapRepeatValue(repeat), // Sử dụng đúng trường và giá trị
+        repeat_type: mapRepeatValue(repeat),
         child_id: selectedChild._id,
         created_by: userId,
       };
+      if (repeat === 'custom') {
+        if (startCustomDate && endCustomDate) {
+          const dates = [];
+          let current = new Date(startCustomDate);
+          const end = new Date(endCustomDate);
+          while (current <= end) {
+            dates.push(new Date(current));
+            current.setDate(current.getDate() + 1);
+          }
+          reminderData.customDates = dates.map(d => d.toISOString());
+          reminderData.startDate = startCustomDate.toISOString();
+          reminderData.endDate = endCustomDate.toISOString();
+        } else {
+          alert('Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc!');
+          return;
+        }
+      } else {
+        if (endDate) reminderData.endDate = endDate.toISOString();
+        // Thêm startDate cho các repeat_type lặp lại
+        if (["daily", "weekly", "monthly"].includes(repeat)) {
+          // startDate chỉ lấy ngày, không lấy giờ
+          const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          reminderData.startDate = startDate.toISOString();
+        }
+      }
       // Thêm log kiểm tra
       console.log('userId:', userId);
       console.log('selectedChild:', selectedChild);
@@ -165,10 +199,44 @@ export default function AddReminderScreen({ navigation }) {
           <Picker.Item label="Hàng tuần" value="weekly" />
           <Picker.Item label="Hàng tháng" value="monthly" />
           <Picker.Item label="Không lặp lại" value="none" />
+          <Picker.Item label="Tự chọn ngày" value="custom" />
         </Picker>
       </View>
+      {repeat === 'custom' && (
+        <>
+          <Text style={styles.label}>Chọn ngày bắt đầu</Text>
+          <TouchableOpacity style={styles.input} onPress={() => setShowStartCustomDatePicker(true)}>
+            <Text>{startCustomDate ? startCustomDate.toLocaleDateString() : 'Chọn ngày bắt đầu'}</Text>
+          </TouchableOpacity>
+          {showStartCustomDatePicker && (
+            <DateTimePicker
+              value={startCustomDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowStartCustomDatePicker(Platform.OS === 'ios');
+                if (selectedDate) setStartCustomDate(selectedDate);
+              }}
+            />
+          )}
+          <Text style={styles.label}>Chọn ngày kết thúc</Text>
+          <TouchableOpacity style={styles.input} onPress={() => setShowEndCustomDatePicker(true)}>
+            <Text>{endCustomDate ? endCustomDate.toLocaleDateString() : 'Chọn ngày kết thúc'}</Text>
+          </TouchableOpacity>
+          {showEndCustomDatePicker && (
+            <DateTimePicker
+              value={endCustomDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowEndCustomDatePicker(Platform.OS === 'ios');
+                if (selectedDate) setEndCustomDate(selectedDate);
+              }}
+            />
+          )}
+        </>
+      )}
       <Text style={styles.label}>Trẻ em liên quan</Text>
-      <Text style={styles.label}>Tên trẻ</Text>
       <View style={styles.input}>
         <Text>{selectedChild ? (selectedChild.name || selectedChild.full_name) : 'Chưa chọn trẻ'}</Text>
       </View>

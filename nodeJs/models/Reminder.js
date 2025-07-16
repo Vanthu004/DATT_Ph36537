@@ -15,10 +15,31 @@ const reminderSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  startDate: {
+    type: Date,
+    required: false
+  },
+  endDate: {
+    type: Date,
+    required: false
+  },
+  customDates: {
+    type: [Date],
+    required: false,
+    default: undefined
+  },
   repeat_type: {
     type: String,
-    enum: ['none', 'daily', 'weekly', 'monthly'],
+    enum: ['none', 'daily', 'weekly', 'monthly','custom'],
     default: 'none'
+  },
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  completedDates: {
+    type: [Date],
+    default: undefined
   },
   created_by: {
     type: mongoose.Schema.Types.ObjectId,

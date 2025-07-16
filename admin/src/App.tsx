@@ -32,11 +32,7 @@ const AppRoutes: React.FC = () => (
   <Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/dashboard" element={<ProtectedRoute><MainScreen /></ProtectedRoute>} />
-    <Route path="/approvals/:id" element={
-      <ProtectedRoute>
-        <PostApprovalDetailPage />
-      </ProtectedRoute>
-    } />
+    <Route path="/approvals/:postId" element={<ProtectedRoute><PostApprovalDetailPage /></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes>
 );

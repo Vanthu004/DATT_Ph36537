@@ -8,7 +8,9 @@ const menuItems = [
   { id: '1', label: 'Quản lý tài khoản phụ' },
   { id: '2', label: 'Quản lý trẻ em' },
   { id: '3', label: 'Nạp tiền' },
-  { id: '4', label: 'Giới thiệu về chúng tôi' },
+  { id: '4', label: 'Hỗ trợ' },
+  { id: '5', label: 'Chính sách người dùng' },
+
 ];
 
 export default function ProfileScreen({ onLogout }) {
@@ -65,6 +67,8 @@ export default function ProfileScreen({ onLogout }) {
       navigation.navigate('SubAccount');
     } else if (item.label === 'Quản lý trẻ em') {
       navigation.navigate('ChildManagement');
+    }else if (item.label === 'Hỗ trợ') {
+      navigation.navigate('SupportScreen');
     }
     // Có thể xử lý các menu khác ở đây
   };
@@ -150,14 +154,16 @@ export default function ProfileScreen({ onLogout }) {
         <Text style={styles.email}>{user.email}</Text>
       </View>
       {/* Menu */}
-      <View style={styles.menuBox}>
-        {menuItems.map(item => (
-          <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#888" />
-          </TouchableOpacity>
-        ))}
-      </View>
+      {user.role !== 'parent_sub' && (
+        <View style={styles.menuBox}>
+          {menuItems.map(item => (
+            <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#888" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
       {/* Logout Button */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Đăng xuất</Text>

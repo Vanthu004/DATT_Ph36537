@@ -13,6 +13,10 @@ const supportTicketSchema = new mongoose.Schema({
     enum: ['pending', 'resolved'],
     default: 'pending',
   },
+  images: {
+    type: [String],
+    default: [],
+  },
   created_at: {
     type: Date,
     default: Date.now,
@@ -22,6 +26,7 @@ const supportTicketSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  response_message: { type: String, required: true },
   resolved_at: {
     type: Date,
     default: null,

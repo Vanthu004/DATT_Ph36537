@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from '../../utils/apiConfig';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSelector } from 'react-redux';
+import { userApi } from '../../utils/userApi';
 
 export default function ActivityLogScreen({ navigation }) {
   const [childrenList, setChildrenList] = useState([]);
@@ -16,7 +17,23 @@ export default function ActivityLogScreen({ navigation }) {
   const [showChildSelector, setShowChildSelector] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [subAccounts, setSubAccounts] = useState([]); // Thêm state lưu tài khoản phụ
   const user = useSelector(state => state.user.user);
+
+  // Lấy danh sách tài khoản phụ
+  useEffect(() => {
+    const fetchSubAccounts = async () => {
+      try {
+        const res = await userApi.getAllUsers({ role: 'parent_sub' });
+        if (res.success && Array.isArray(res.data)) {
+          setSubAccounts(res.data);
+        }
+      } catch (err) {
+        console.error('Error fetching sub accounts:', err);
+      }
+    };
+    fetchSubAccounts();
+  }, []);
 
   // Fetch danh sách trẻ
   useEffect(() => {
@@ -88,6 +105,18 @@ export default function ActivityLogScreen({ navigation }) {
     if (date) setSelectedDate(date);
   };
 
+  // Hàm lấy tên tài khoản phụ từ mảng user_id
+  const getSubAccountNames = (assignedTo) => {
+    if (!assignedTo || !Array.isArray(assignedTo) || subAccounts.length === 0) return '';
+    return assignedTo
+      .map(userId => {
+        const user = subAccounts.find(u => u._id === userId);
+        return user ? user.name : '';
+      })
+      .filter(Boolean)
+      .join(', ');
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.activityItem}
@@ -129,7 +158,9 @@ export default function ActivityLogScreen({ navigation }) {
         <View style={styles.selectorContent}>
           <Ionicons name="person-outline" size={20} color="#666" />
           <Text style={styles.selectorText}>
-            {selectedChild ? (selectedChild.name || selectedChild.full_name) : 'Chọn trẻ'}
+            {selectedChild
+              ? `${selectedChild.name || selectedChild.full_name}${selectedChild.assignedTo && selectedChild.assignedTo.length > 0 ? ` (${getSubAccountNames(selectedChild.assignedTo)})` : ''}`
+              : 'Chọn trẻ'}
           </Text>
         </View>
         <Ionicons name="chevron-down" size={20} color="#666" />
@@ -169,7 +200,10 @@ export default function ActivityLogScreen({ navigation }) {
                   onPress={() => handleChildSelect(item)}
                 >
                   <View style={styles.childInfo}>
-                    <Text style={styles.childName}>{item.name || item.full_name}</Text>
+                    <Text style={styles.childName}>
+                      {item.name || item.full_name}
+                      {item.assignedTo && item.assignedTo.length > 0 ? ` (${getSubAccountNames(item.assignedTo)})` : ''}
+                    </Text>
                     <Text style={styles.childAge}>{item.age ? `${item.age} tuổi` : ''}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -184,7 +218,10 @@ export default function ActivityLogScreen({ navigation }) {
       {/* Tiêu đề và nút thêm */}
       <View style={styles.activitiesHeader}>
         <Text style={styles.sectionTitle}>
-          Các hoạt động{selectedChild ? ` - ${selectedChild.name || selectedChild.full_name}` : ''}
+          Các hoạt động
+          {selectedChild
+            ? ` - ${selectedChild.name || selectedChild.full_name}${selectedChild.assignedTo && selectedChild.assignedTo.length > 0 ? ` (${getSubAccountNames(selectedChild.assignedTo)})` : ''}`
+            : ''}
         </Text>
         <TouchableOpacity
           style={styles.addIconButton}
@@ -210,7 +247,8 @@ export default function ActivityLogScreen({ navigation }) {
         )}
       </View>
       {/* Button */}
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity style={styles.addButton}
+       onPress={() => selectedChild && navigation.navigate('AddActivityLog', { childId: selectedChild._id, childName: selectedChild.name || selectedChild.full_name })}>
         <Text style={styles.addButtonText}>Ghi lại nhật ký hoạt động mới</Text>
       </TouchableOpacity>
     </SafeAreaView>

@@ -111,7 +111,7 @@ const AddPostScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
-      <Text style={styles.header}>Chi tiết bài viết</Text>
+      <Text style={styles.header}>Tạo bài viết mới</Text>
       <View style={styles.formGroup}>
         <Text style={styles.label}>Phạm vi đăng bài</Text>
         <View style={styles.selectBox}>
@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     alignSelf: 'center',
+    marginTop:20,
   },
   formGroup: {
     backgroundColor: '#fafbfc',

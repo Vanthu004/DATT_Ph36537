@@ -34,5 +34,6 @@ app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/assigned-child', require('./routes/assignedChildRouter'));
 app.use('/api/images', require('./routes/imageRoutes'));
+app.use('/api/notifications',require('./routes/notificationRoutes'));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
