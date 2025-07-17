@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import supportApi from '../../utils/supportApi';
 
@@ -11,9 +11,12 @@ export default function SupportListScreen() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [user]);
+  // Sử dụng useFocusEffect để reload khi quay lại màn hình
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTickets();
+    }, [user])
+  );
 
   const fetchTickets = async () => {
     if (!user || !user._id) return;

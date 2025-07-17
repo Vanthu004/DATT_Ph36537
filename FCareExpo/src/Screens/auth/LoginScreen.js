@@ -19,10 +19,28 @@ export default function LoginScreen({ navigation, onLogin }) {
     try {
       const response = await userApi.login(email, password);
       if (response.success) {
+        // Nếu tài khoản bị khóa, không cho đăng nhập
+        if (response.data && response.data.is_blocked) {
+          setLoading(false);
+          Alert.alert('Tài khoản bị khóa tt ', response.data.block_reason || 'Tài khoản của bạn đã bị khóa.');
+          return;
+        }
         userApi.setToken(response.token);
         // Gọi API lấy user chi tiết (nếu cần)
         const userInfo = await userApi.getCurrentUser();
         if (userInfo && userInfo.success && userInfo.data) {
+          // Nếu userInfo trả về user bị block (token còn hạn nhưng bị block sau đó)
+          if (userInfo.data.is_blocked) {
+            setLoading(false);
+            let message = userInfo.data.block_reason || 'Tài khoản của bạn đã bị khóa.';
+            if (userInfo.data.block_until) {
+              const date = new Date(userInfo.data.block_until);
+              const dateStr = date.toLocaleString();
+              message += `\nThời gian bị khóa đến: ${dateStr}`;
+            }
+            Alert.alert('Tài khoản bị khóa', message);
+            return;
+          }
           dispatch(setUser(userInfo.data));
         } else {
           dispatch(setUser(response.data)); // fallback nếu không có API getCurrentUser
@@ -32,7 +50,27 @@ export default function LoginScreen({ navigation, onLogin }) {
         // navigation.replace('Home');
       } else {
         setLoading(false);
-        Alert.alert('Lỗi', response.error || 'Đăng nhập thất bại');
+        // Nếu response trả về lỗi do bị block
+        if (
+          response.status === 403 &&
+          (response.block_reason || (response.data && response.data.block_reason))
+        ) {
+          // Lấy thời gian block_until nếu có
+          const blockUntil = response.block_until || (response.data && response.data.block_until);
+          let message = response.block_reason || (response.data && response.data.block_reason) || 'Tài khoản của bạn đã bị khóa.';
+          if (blockUntil) {
+            // Format ngày giờ cho dễ đọc
+            const date = new Date(blockUntil);
+            const dateStr = date.toLocaleString();
+            message += `\nThời gian bị khóa đến: ${dateStr}`;
+          }
+          Alert.alert(
+            'Tài khoản bị khóa',
+            "Lý do:" + message
+          );
+        } else {
+          Alert.alert('Lỗi', response.error || 'Đăng nhập thất bại');
+        }
       }
     } catch (error) {
       setLoading(false);

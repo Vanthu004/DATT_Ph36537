@@ -42,7 +42,7 @@ exports.getTicketById = async (req, res) => {
 
 // Cập nhật ticket (ví dụ cập nhật trạng thái)
 exports.resolveTicket = async (req, res) => {
-  const { resolved_by } = req.body;
+  const { resolved_by, response_message } = req.body;
   const admin = await User.findById(resolved_by);
   if (!admin) return res.status(400).json({ message: 'resolved_by không tồn tại' });
 
@@ -52,6 +52,7 @@ exports.resolveTicket = async (req, res) => {
       status: 'resolved',
       resolved_by,
       resolved_at: new Date(),
+      response_message, // Add this line to update the response_message
     },
     { new: true }
   );

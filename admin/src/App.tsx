@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import Sidebar from './components/Sidebar';
 import './App.css';
 import PostApprovalDetailPage from './pages/PostApprovalDetailPage';
+import SupportRequestDetailPage from './pages/SupportRequestDetailPage';
 
 const MainScreen: React.FC = () => {
   const [selectedPage, setSelectedPage] = React.useState('Dashboard');
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/dashboard" element={<ProtectedRoute><MainScreen /></ProtectedRoute>} />
     <Route path="/approvals/:postId" element={<ProtectedRoute><PostApprovalDetailPage /></ProtectedRoute>} />
+    <Route path="/support-requests/:requestId" element={<ProtectedRoute><SupportRequestDetailPage /></ProtectedRoute>} />
     <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes>
 );

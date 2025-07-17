@@ -189,9 +189,16 @@ exports.getCurrentUser = async (req, res) => {
         message: 'Không tìm thấy user' 
       });
     }
+    // Nếu user bị block, trả về thêm block_until, block_reason, is_blocked
+    const userObj = user.toObject();
     res.json({ 
       success: true, 
-      data: user 
+      data: {
+        ...userObj,
+        is_blocked: user.is_blocked,
+        block_reason: user.block_reason || '',
+        block_until: user.block_until || null
+      }
     });
   } catch (err) {
     console.log('Lỗi trong getCurrentUser:', err);
@@ -229,6 +236,9 @@ exports.updateUser = async (req, res) => {
   try {
     const { password, ...rest } = req.body;
     const updateData = { ...rest };
+    // Đảm bảo nhận cả block_reason và block_until nếu có
+    if (typeof req.body.block_reason !== 'undefined') updateData.block_reason = req.body.block_reason;
+    if (typeof req.body.block_until !== 'undefined') updateData.block_until = req.body.block_until;
     if (password) updateData.password = await bcrypt.hash(password, 10);
 
     const user = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
@@ -238,11 +248,9 @@ exports.updateUser = async (req, res) => {
         message: 'Không tìm thấy user' 
       });
     }
-    
     // Trả về user không bao gồm password
     const userResponse = user.toObject();
     delete userResponse.password;
-    
     res.json({
       success: true,
       data: userResponse
@@ -296,6 +304,16 @@ exports.login = async (req, res) => {
       });
     }
     
+    if (user.is_blocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn đã bị khóa với lý do',
+        block_reason: user.block_reason || 'Không rõ lý do',
+        is_blocked: true,
+        block_until: user.block_until || null
+      });
+    }
+
     // Đảm bảo user._id được chuyển đổi thành string
     const userId = user._id.toString();
     const token = jwt.sign({ id: userId, role: user.role }, 'your_jwt_secret', { expiresIn: '7d' });
@@ -306,7 +324,10 @@ exports.login = async (req, res) => {
         id: userId, 
         email: user.email, 
         name: user.name, 
-        role: user.role 
+        role: user.role,
+        is_blocked: user.is_blocked,
+        block_reason: user.block_reason || '',
+        block_until: user.block_until || null
       } 
     });
   } catch (err) {

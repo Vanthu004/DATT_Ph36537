@@ -6,8 +6,8 @@ import './PostApprovalPage.css';
 
 const statusMap: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chưa giải quyết', color: '#ff9800' },
-  approved: { label: 'Tán thành', color: '#4caf50' },
-  rejected: { label: 'Vật bị loại', color: '#f44336' },
+  approved: { label: 'Chấp nhận', color: '#4caf50' },
+  rejected: { label: 'Bị từ chối', color: '#f44336' },
 };
 
 const PostApprovalPage: React.FC = () => {
@@ -46,14 +46,14 @@ const PostApprovalPage: React.FC = () => {
     fetchApprovals();
   }, []);
 
-  const handleApprove = async (id: string) => {
-    await approvePost(id, 'approved');
-    fetchApprovals();
-  };
-  const handleReject = async (id: string) => {
-    await approvePost(id, 'rejected');
-    fetchApprovals();
-  };
+  // const handleApprove = async (id: string) => {
+  //   await approvePost(id, 'approved');
+  //   fetchApprovals();
+  // };
+  // const handleReject = async (id: string) => {
+  //   await approvePost(id, 'rejected');
+  //   fetchApprovals();
+  // };
 
   const filteredPosts = filter === 'all' ? posts : posts.filter(p => p.status === filter);
 
@@ -65,7 +65,7 @@ const PostApprovalPage: React.FC = () => {
         <select className="approval-filter" value={filter} onChange={e => setFilter(e.target.value)}>
           <option value="all">Tất cả các trạng thái</option>
           <option value="pending">Chưa giải quyết</option>
-          <option value="approved">Tán thành</option>
+          <option value="approved">Chấp nhận</option>
           <option value="rejected">Bị từ chối</option>
         </select>
       </div>
@@ -99,8 +99,8 @@ const PostApprovalPage: React.FC = () => {
                 <td>{post.createdAt ? post.createdAt.slice(0, 10) : ''}</td>
                 <td>
                   <button className="approval-action view" onClick={() => navigate(`/approvals/${post.id}`)}>Xem</button>
-                  <button className="approval-action approve" onClick={() => handleApprove(post.id)} disabled={post.status !== 'pending'}>Chấp thuận</button>
-                  <button className="approval-action reject" onClick={() => handleReject(post.id)} disabled={post.status !== 'pending'}>Từ chối</button>
+                  {/* <button className="approval-action approve" onClick={() => handleApprove(post.id)} disabled={post.status !== 'pending'}>Chấp thuận</button>
+                  <button className="approval-action reject" onClick={() => handleReject(post.id)} disabled={post.status !== 'pending'}>Từ chối</button> */}
                 </td>
               </tr>
             ))}

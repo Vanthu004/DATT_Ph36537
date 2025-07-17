@@ -30,6 +30,7 @@ const postSchema = new mongoose.Schema(
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
+    response_message: { type: String, required: true },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );

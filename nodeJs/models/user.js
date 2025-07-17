@@ -44,6 +44,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    block_reason: {
+      type: String,
+      default: ''
+    },
+    block_until: {
+      type: Date,
+      default: null
+    },
 
     // Thông tin avatar
     avatar: {

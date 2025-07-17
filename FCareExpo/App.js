@@ -8,7 +8,7 @@ import { Provider, useDispatch } from 'react-redux';
 import store from './src/store';
 import { setUser } from './src/store/userSlice';
 import { userApi } from './src/utils';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
@@ -23,6 +23,23 @@ function AppContent() {
           const response = await userApi.getCurrentUser();
           if (response.success && response.data) {
             dispatch(setUser(response.data));
+            // Nếu user bị block thì logout và thông báo
+            if (response.data.is_blocked) {
+              let message = response.data.block_reason || 'Tài khoản của bạn đã bị khóa.';
+              if (response.data.block_until) {
+                const date = new Date(response.data.block_until);
+                const dateStr = date.toLocaleString();
+                message += `\nThời gian bị khóa đến: ${dateStr}`;
+              }
+              Alert.alert('Tài khoản bị khóa', message, [
+                { text: 'OK', onPress: async () => {
+                  await AsyncStorage.removeItem('token');
+                  setIsLoggedIn(false);
+                  dispatch(setUser(null));
+                }}
+              ]);
+              return;
+            }
           }
         } catch (err) {}
         setIsLoggedIn(true);
@@ -32,7 +49,15 @@ function AppContent() {
       setUserReady(true);
     };
     checkTokenAndUser();
-  }, [dispatch]);
+    // Định kỳ kiểm tra user bị block
+    let interval = null;
+    if (isLoggedIn) {
+      interval = setInterval(checkTokenAndUser, 15000); // 15s kiểm tra 1 lần
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [dispatch, isLoggedIn]);
 
   const handleLogin = async (token, userData) => {
     await AsyncStorage.setItem('token', token);

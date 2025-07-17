@@ -54,12 +54,12 @@ export const getAllPostApprovals = async () => {
   }
 };
 
-export const approvePost = async (approvalId: string, status: 'approved' | 'rejected', reason?: string) => {
+export const approvePost = async (approvalId: string, status: 'approved' | 'rejected', note?: string) => {
   try {
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.POST_APPROVALS}/${approvalId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ status, reason })
+      body: JSON.stringify({ status, note })
     });
     const data = await res.json();
     return data;
@@ -88,6 +88,19 @@ export const getApprovalById = async (id: string) => {
       headers: getAuthHeaders()
     });
     return await res.json();
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const deletePostApproval = async (approvalId: string) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.POST_APPROVALS}/${approvalId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    return data;
   } catch (err) {
     return handleApiError(err);
   }

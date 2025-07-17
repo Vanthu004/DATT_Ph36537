@@ -3,11 +3,19 @@ import { getAllUsers } from '../services/userService';
 import { getAllChildren } from '../services/childService';
 import { getAllPosts, getAllPostApprovals } from '../services/postService';
 import PostApprovalPage from '../pages/PostApprovalPage';
+import UserAccountPage from '../pages/UserAccountPage';
+import SupportRequestPage from '../pages/SupportRequestPage';
 // TODO: Thêm các service khác nếu cần
 
 const Dashboard: React.FC<{ selectedPage: string }> = ({ selectedPage }) => {
   if (selectedPage === 'Kiểm duyệt đăng bài') {
     return <PostApprovalPage />;
+  }
+  if (selectedPage === 'Quản lý tài khoản') {
+    return <UserAccountPage />;
+  }
+  if (selectedPage === 'Quản lý yêu cầu hỗ trợ') {
+    return <SupportRequestPage />;
   }
   const [userCount, setUserCount] = useState(0);
   const [childCount, setChildCount] = useState(0);
